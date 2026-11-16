@@ -78,8 +78,11 @@
   .timer b{position:relative;z-index:1}
   .timer.low{background:conic-gradient(var(--red) 0 var(--deg,360deg),#e8edf7 var(--deg,360deg));color:var(--red-deep);animation:beat .5s infinite}
   @keyframes beat{50%{transform:scale(1.08)}}
-  .prepare{background:linear-gradient(145deg,#182a58,#314a90);border-radius:24px;color:#fff;text-align:center;padding:14px;margin-bottom:13px;font-weight:800}
-  .prepare b{font-size:48px;line-height:1;display:block;color:var(--gold);animation:pop .9s infinite}
+  .prepare{background:linear-gradient(145deg,#182a58,#314a90);border-radius:28px;color:#fff;text-align:center;padding:34px 14px 40px;font-weight:900;font-size:22px;min-height:440px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+  .prepare b{font-size:160px;line-height:1;display:block;color:var(--gold)}
+  .prepare b.tick{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+  .prepare small{font-size:16px;opacity:.8;font-weight:700}
+  .reveal-in{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
   .question{min-height:190px;border-radius:25px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);padding:22px 20px;display:grid;place-items:center;text-align:center;font-size:27px;font-weight:950;line-height:1.42;letter-spacing:-.02em}
   .question.vi{font-size:24px}
   .answer-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:17px}
@@ -326,12 +329,12 @@ function renderAnswer() {
   const rk = st.rk; const as = answerState[rk] || (LS.get("a_" + rk) ? { a: LS.get("a_" + rk) === "T", status: "sent" } : null);
   if (as) answerState[rk] = as;
   if (setPage(`<div class="question-head"><span class="round">${T("qn", { n: st.qn })}${st.qTotal ? " / " + st.qTotal : ""}</span><div class="timer" id="tm"><b id="tmN"></b></div></div>
-    <div class="prepare hide" id="rdy"><span>${T("readyQ")}</span><b id="rdyN"></b></div>
-    <div class="question ${lang === "vi" ? "vi" : ""}">${esc(qText(st.q))}</div>
+    <div class="prepare hide" id="rdy"><span>${T("readyQ")}</span><b id="rdyN"></b><small>${T("cdHint")}</small></div>
+    <div id="qArea"><div class="question ${lang === "vi" ? "vi" : ""}" id="qBox"></div>
     <div class="answer-grid" id="ansBox">
       <button class="answer true" data-a="T"><em>⭕</em>${T("T")}<small>${T("alsoT")}</small></button>
       <button class="answer false" data-a="F"><em>❌</em>${T("F")}<small>${T("alsoF")}</small></button>
-    </div>
+    </div></div>
     <div class="submitted" id="sent"></div>`, "ans" + rk + lang)) {
     document.querySelectorAll("#ansBox button").forEach(b => b.onclick = () => submit(rk, b.dataset.a === "T"));
   }
@@ -346,8 +349,11 @@ function updateAnswerUI(rk) {
   $("#tmN").textContent = before ? Math.ceil(dur / 1000) : left;
   tm.style.setProperty("--deg", (before ? 360 : 360 * leftMs / dur) + "deg");
   tm.classList.toggle("low", !before && left <= 3 && left > 0);
+  // 倒數期間題目藏起來；倒數結束的同一瞬間才出現題目、開放作答
   $("#rdy").classList.toggle("hide", !before);
-  if (before) $("#rdyN").textContent = Math.ceil((st.startAt - now) / 1000);
+  $("#qArea").classList.toggle("hide", before);
+  if (before) { const n = String(Math.ceil((st.startAt - now) / 1000)); const el = $("#rdyN"); if (el.textContent !== n) { el.textContent = n; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); if (navigator.vibrate) navigator.vibrate(20); } }
+  else if (!$("#qBox").textContent) { $("#qBox").textContent = qText(st.q); $("#qArea").classList.add("reveal-in"); }
   const closed = now > st.deadline;
   document.querySelectorAll("#ansBox button").forEach(b => {
     const mine = as && ((b.dataset.a === "T") === as.a);
@@ -415,14 +421,14 @@ function renderSpectate(late) {
     : `<div>${modePill()}</div><span class="spectate-icon">👀</span><p class="eyebrow">Spectator mode</p><h2 class="phone-title wrong">${T("out")}</h2><p class="sub">${T("outSub")}</p>`;
   let card = "";
   if (st.phase === "lobby") card = `<div class="spectate-card"><strong>⏳ ${T("waitNext")}</strong></div>`;
-  else if (st.phase === "answer") card = `<div class="spectate-card"><p class="eyebrow">${T("qn", { n: st.qn })} · <span id="tm"></span></p><strong>${esc(qText(st.q))}</strong></div>`;
+  else if (st.phase === "answer") card = `<div class="spectate-card"><p class="eyebrow">${T("qn", { n: st.qn })} · <span id="tm"></span></p><strong id="spq"></strong></div>`;
   else if (st.phase === "reveal" || st.phase === "board") card = `<div class="spectate-card"><strong>${esc(qText(st.q))}</strong>${ansTag(st.ans)}<p>${esc(exText())}</p></div>`;
   else if (st.phase === "end") card = `<div class="spectate-card"><strong>🏆 ${T("over")}</strong></div>`;
   const alive = st.mode === "elim" && st.alive && st.phase !== "lobby" ? `<div class="banner gold">${T("aliveNow", { n: st.alive })}</div>` : "";
   setPage(`<div class="center spectate">${head}${card}${alive}<p class="footer-note">📺 ${T("look")}</p></div>`, "spec" + late + st.phase + st.rk + lang + st.alive);
   if (st.phase === "answer") {
     clearInterval(tickTimer);
-    tickTimer = setInterval(() => { const tm = $("#tm"); if (!tm || st.phase !== "answer") return clearInterval(tickTimer); const n = sNow(); tm.textContent = n < st.startAt ? T("ready") : Math.max(0, Math.ceil((st.deadline - n) / 1000)) + "s"; }, 250);
+    tickTimer = setInterval(() => { const tm = $("#tm"); if (!tm || st.phase !== "answer") return clearInterval(tickTimer); const n = sNow(); const bf = n < st.startAt; tm.textContent = bf ? T("ready") + " " + Math.ceil((st.startAt - n) / 1000) : Math.max(0, Math.ceil((st.deadline - n) / 1000)) + "s"; const q = $("#spq"); const want = bf ? "⏳ " + T("readyQ") : qText(st.q); if (q && q.textContent !== want) q.textContent = want; }, 250);
   }
 }
 

@@ -109,7 +109,7 @@
   // ---------- 文字（中／英／越） ----------
   const I18N = {
     zh: {
-      nameSub: "排行榜會顯示這個名字", autoNext: "主持人開始後，手機會自動跳到題目", readyQ: "準備好了嗎？", modeScoreShort: "積分賽", modeElimShort: "淘汰賽", party: "尾牙互動遊戲", pickSub: "Choose language · Chọn ngôn ngữ", youIn: "You are in!", aliveNow: "目前還有 {n} 人", nextSoon: "下一題即將開始…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "TRUE · ĐÚNG", alsoF: "FALSE · SAI", congrats: "恭喜！", 
+      cdHint: "倒數結束題目就出現，越快答對分數越高！", nameSub: "排行榜會顯示這個名字", autoNext: "主持人開始後，手機會自動跳到題目", readyQ: "準備好了嗎？", modeScoreShort: "積分賽", modeElimShort: "淘汰賽", party: "尾牙互動遊戲", pickSub: "Choose language · Chọn ngôn ngữ", youIn: "You are in!", aliveNow: "目前還有 {n} 人", nextSoon: "下一題即將開始…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "TRUE · ĐÚNG", alsoF: "FALSE · SAI", congrats: "恭喜！", 
       title: "真的還假的？", sub: "冷知識大挑戰", pick: "選擇語言",
       enterName: "輸入你的名字", namePh: "最多 10 個字", join: "加入",
       nameReq: "請輸入名字", nameLong: "名字最多 10 個字", joining: "加入中…", joinFail: "加入失敗，請再試一次",
@@ -125,7 +125,7 @@
       thanks: "謝謝參與！", youChose: "你選了", pts: "分",
     },
     en: {
-      nameSub: "This name appears on the leaderboard", autoNext: "Your phone jumps to the question when the host starts", readyQ: "Get ready!", modeScoreShort: "Points", modeElimShort: "Elimination", party: "Year-end party game", pickSub: "選擇語言 · Chọn ngôn ngữ", youIn: "You are in!", aliveNow: "{n} players still in", nextSoon: "Next question coming up…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "真的 · ĐÚNG", alsoF: "假的 · SAI", congrats: "Congrats!", 
+      cdHint: "The question appears at zero. Faster correct answers score more!", nameSub: "This name appears on the leaderboard", autoNext: "Your phone jumps to the question when the host starts", readyQ: "Get ready!", modeScoreShort: "Points", modeElimShort: "Elimination", party: "Year-end party game", pickSub: "選擇語言 · Chọn ngôn ngữ", youIn: "You are in!", aliveNow: "{n} players still in", nextSoon: "Next question coming up…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "真的 · ĐÚNG", alsoF: "假的 · SAI", congrats: "Congrats!", 
       title: "True or False?", sub: "Weird Facts Challenge", pick: "Choose language",
       enterName: "Enter your name", namePh: "Up to 10 characters", join: "Join",
       nameReq: "Please enter your name", nameLong: "Name must be 10 characters or fewer", joining: "Joining…", joinFail: "Couldn't join. Please try again.",
@@ -141,7 +141,7 @@
       thanks: "Thanks for playing!", youChose: "You chose", pts: "pts",
     },
     vi: {
-      nameSub: "Tên này sẽ hiện trên bảng xếp hạng", autoNext: "Điện thoại sẽ tự chuyển đến câu hỏi khi bắt đầu", readyQ: "Sẵn sàng chưa?", modeScoreShort: "Tính điểm", modeElimShort: "Loại trực tiếp", party: "Trò chơi tiệc tất niên", pickSub: "選擇語言 · Choose language", youIn: "Đã vào!", aliveNow: "Còn {n} người", nextSoon: "Câu tiếp theo sắp bắt đầu…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "真的 · TRUE", alsoF: "假的 · FALSE", congrats: "Chúc mừng!", 
+      cdHint: "Câu hỏi hiện ra khi hết đếm ngược. Trả lời đúng càng nhanh càng nhiều điểm!", nameSub: "Tên này sẽ hiện trên bảng xếp hạng", autoNext: "Điện thoại sẽ tự chuyển đến câu hỏi khi bắt đầu", readyQ: "Sẵn sàng chưa?", modeScoreShort: "Tính điểm", modeElimShort: "Loại trực tiếp", party: "Trò chơi tiệc tất niên", pickSub: "選擇語言 · Choose language", youIn: "Đã vào!", aliveNow: "Còn {n} người", nextSoon: "Câu tiếp theo sắp bắt đầu…", langZhSub: "中文介面", langEnSub: "English interface", langViSub: "Giao diện tiếng Việt", alsoT: "真的 · TRUE", alsoF: "假的 · FALSE", congrats: "Chúc mừng!", 
       title: "Thật hay Giả?", sub: "Thử thách kiến thức lạ", pick: "Chọn ngôn ngữ",
       enterName: "Nhập tên của bạn", namePh: "Tối đa 10 ký tự", join: "Tham gia",
       nameReq: "Vui lòng nhập tên", nameLong: "Tên tối đa 10 ký tự", joining: "Đang tham gia…", joinFail: "Không thể tham gia. Vui lòng thử lại.",

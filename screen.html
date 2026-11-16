@@ -48,6 +48,12 @@
   .wall-question{height:42vh;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.6vh;font-weight:950;letter-spacing:-.03em;line-height:1.25;padding:0 2vw}
   .translations{display:grid;gap:.6vh;text-align:center;font-size:2.8vh;color:var(--pale);font-weight:700;margin-top:-1vh}
   .answers-bar{display:flex;justify-content:center;gap:2vh;margin-top:2.6vh}
+  .countdown{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+  .countdown b{font-size:42vh;line-height:1;color:var(--gold);font-weight:950;text-shadow:0 2vh 5vh #0006}
+  .countdown b.tick{animation:cdPop .6s cubic-bezier(.2,1.6,.4,1)}
+  .countdown span{font-size:4vh;font-weight:900;letter-spacing:.06em}
+  @keyframes cdPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  .q-in{animation:cdPop .45s cubic-bezier(.2,1.6,.4,1)}
   .wall-answer{padding:1.4vh 5vw;border-radius:2vh;font-size:3.6vh;font-weight:950;color:#fff}
   .wall-answer.green{background:var(--green)}.wall-answer.red{background:var(--red)}
   .wall-progress{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:3vh;font-weight:850;color:#e2eaff;white-space:nowrap}
@@ -151,9 +157,10 @@
       <div><div class="brandline">真的還假的？ · TRUE OR FALSE</div><div class="pills"><span class="wall-round" id="qNo"></span><span class="wall-round" id="qAlive"></span></div></div>
       <div class="wall-timer" id="tNum"></div>
     </div>
-    <div class="wall-question" id="qMain"></div>
+    <div class="countdown hide" id="cd"><span>準備 · READY · CHUẨN BỊ</span><b id="cdN"></b><span style="font-size:2.6vh;opacity:.8">倒數結束題目就出現，越快答對分數越高！</span></div>
+    <div id="qWrap"><div class="wall-question" id="qMain"></div>
     <div class="translations" id="qSub"></div>
-    <div class="answers-bar"><span class="wall-answer green">⭕ 真的 · TRUE · ĐÚNG</span><span class="wall-answer red">❌ 假的 · FALSE · SAI</span></div>
+    <div class="answers-bar"><span class="wall-answer green">⭕ 真的 · TRUE · ĐÚNG</span><span class="wall-answer red">❌ 假的 · FALSE · SAI</span></div></div>
     <div class="wall-progress" id="answered"></div>
   </section>
 
@@ -384,15 +391,20 @@ function watchAnswers(rk) {
 }
 
 // 計時迴圈
-let lastTick = -1;
+let lastTick = -1, qShownRk = null;
 function loop() {
   requestAnimationFrame(loop);
   if (!st || st.phase !== "answer" || (revealAnim && revealAnim.rk === st.rk)) return;
   const n = now(), dur = st.deadline - st.startAt;
   const before = n < st.startAt, left = Math.max(0, st.deadline - n);
   const sec = Math.ceil(left / 1000);
+  // 倒數期間只顯示大數字，題目藏起來；倒數到 0 才出現
+  $("#cd").classList.toggle("hide", !before);
+  $("#qWrap").style.visibility = before ? "hidden" : "visible";
+  if (before) { const c = String(Math.ceil((st.startAt - n) / 1000)); const el = $("#cdN"); if (el.textContent !== c) { el.textContent = c; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); beep(660, .12, "square", .1); } }
+  else if (qShownRk !== st.rk) { qShownRk = st.rk; const w = $("#qWrap"); w.classList.remove("q-in"); void w.offsetWidth; w.classList.add("q-in"); beep(1320, .2, "triangle", .15); }
   const tn = $("#tNum");
-  const tHtml = before ? `${Math.ceil((st.startAt - n) / 1000)}<small>準備 · READY · CHUẨN BỊ</small>` : `${String(left > 0 ? sec : 0).padStart(2, "0")}<small>秒 · SECONDS · GIÂY</small>`;
+  const tHtml = before ? `` : `${String(left > 0 ? sec : 0).padStart(2, "0")}<small>秒 · SECONDS · GIÂY</small>`;
   if (tn.innerHTML !== tHtml) tn.innerHTML = tHtml;
   tn.classList.toggle("ready", before); tn.classList.toggle("low", !before && left > 0 && sec <= 3);
   const tot = st.alive || 0, cnt = Object.keys(answersNow).length;
