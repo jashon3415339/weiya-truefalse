@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>真的還假的？ 大螢幕</title>
+<style>
+  :root{--gold:#ffd23f;--T:#22c07a;--F:#ff4d5e;--bg:#140c33}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",system-ui,sans-serif;color:#fff;background:var(--bg)}
+  body{background:radial-gradient(ellipse at 50% 0%,#4b2aa0 0,#140c33 65%)}
+  .stage{position:fixed;inset:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3vh 4vw 9vh}
+  .sec{display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center}
+  .sec.on{display:flex}
+  .title{font-size:7.5vh;font-weight:900;letter-spacing:.3vh;background:linear-gradient(90deg,#ffd23f,#ff8c42,#ff4d5e);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0;line-height:1.1;text-align:center}
+  .subt{font-size:2.6vh;opacity:.85;text-align:center}
+  /* 開場 */
+  #lobby{flex-direction:row;gap:4vw}
+  .lobL{display:flex;flex-direction:column;align-items:center;gap:1.6vh;flex:0 0 auto}
+  .qrbox{background:#fff;padding:2vh;border-radius:2.4vh;box-shadow:0 0 6vh rgba(255,210,63,.35)}
+  #qr{width:44vh;height:44vh;display:flex;align-items:center;justify-content:center}
+  #qr img,#qr canvas{width:100%!important;height:100%!important}
+  .url{font-size:2vh;opacity:.8;word-break:break-all;text-align:center;max-width:52vh}
+  .lobR{flex:1;display:flex;flex-direction:column;height:100%;min-width:0}
+  .mode{display:inline-block;background:rgba(255,255,255,.12);border:.3vh solid var(--gold);color:var(--gold);padding:.6vh 2vh;border-radius:4vh;font-size:2.6vh;font-weight:800;margin:1.4vh auto}
+  .cnt{font-size:3vh;text-align:center;margin:1vh 0}
+  .cnt b{font-size:9vh;color:var(--gold);display:block;line-height:1}
+  #names{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:1vh;overflow:hidden;padding:1vh}
+  .chip{background:rgba(255,255,255,.14);border-radius:3vh;padding:.7vh 1.8vh;font-size:2.6vh;font-weight:700}
+  .chip.new{animation:chipIn .6s cubic-bezier(.2,1.6,.4,1);background:var(--gold);color:#1b1140}
+  @keyframes chipIn{0%{transform:scale(0) rotate(-15deg)}100%{transform:scale(1)}}
+  /* 題目 */
+  .qtop{position:absolute;top:3vh;left:4vw;right:4vw;display:flex;justify-content:space-between;align-items:center;font-size:3.2vh;font-weight:800}
+  .pill{background:rgba(255,255,255,.12);padding:.6vh 2.2vh;border-radius:4vh}
+  .qmain{font-size:7.6vh;font-weight:900;line-height:1.3;text-align:center;max-width:88vw;text-shadow:0 .5vh 0 rgba(0,0,0,.3)}
+  .qsub{font-size:3.4vh;opacity:.8;text-align:center;margin-top:1.4vh;max-width:85vw;line-height:1.35}
+  .ring{position:relative;width:22vh;height:22vh;margin-top:4vh}
+  .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9vh;font-weight:900}
+  .ring.low .num{color:var(--F);animation:beat .5s infinite}
+  @keyframes beat{50%{transform:scale(1.12)}}
+  .ready{font-size:4vh;color:var(--gold);font-weight:800;margin-top:3vh;height:5vh}
+  .answered{font-size:3.6vh;margin-top:2vh;font-weight:700}
+  .answered b{color:var(--gold);font-size:5vh}
+  .tu{font-size:6vh;font-weight:900;color:var(--gold);animation:beat .8s infinite}
+  /* 公布結果 */
+  .rq{font-size:4.2vh;font-weight:800;text-align:center;max-width:88vw;line-height:1.3;margin-bottom:2vh}
+  .bars{display:flex;gap:4vw;width:80vw;height:32vh;align-items:flex-end;position:relative}
+  .bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;transition:opacity .6s,filter .6s}
+  .bar .fill{width:100%;border-radius:2vh 2vh 0 0;height:0;transition:height 2s cubic-bezier(.2,.8,.2,1)}
+  .bar.T .fill{background:linear-gradient(180deg,#3fe39a,#129159)}
+  .bar.F .fill{background:linear-gradient(180deg,#ff7a86,#c71f33)}
+  .bar .pct{font-size:10vh;font-weight:900;position:absolute;bottom:0;left:0;right:0;text-align:center;padding-bottom:1vh;text-shadow:0 .5vh 0 rgba(0,0,0,.35)}
+  .bar .lab{font-size:5vh;font-weight:900;margin-top:1vh;position:absolute;bottom:-7vh}
+  .bar .ppl{font-size:2.6vh;opacity:.85}
+  .bar.lose{opacity:.25;filter:grayscale(.8)}
+  .bar.win .fill{box-shadow:0 0 6vh rgba(255,210,63,.8)}
+  .stamp{position:absolute;top:2vh;font-size:9vh;font-weight:900;color:var(--gold);border:1vh solid var(--gold);border-radius:3vh;padding:0 3vh;background:rgba(20,12,51,.85);transform:rotate(-8deg) scale(0);transition:transform .45s cubic-bezier(.2,1.8,.4,1);white-space:nowrap;z-index:3}
+  .stamp.on{transform:rotate(-8deg) scale(1)}
+  .noans{margin-top:8vh;font-size:2.6vh;opacity:.8;min-height:3vh}
+  .exbox{margin-top:1.4vh;background:rgba(255,255,255,.1);border-radius:2vh;padding:1.8vh 3vh;max-width:84vw;text-align:center;opacity:0;transform:translateY(2vh);transition:all .6s}
+  .exbox.on{opacity:1;transform:none}
+  .exbox .e1{font-size:3.6vh;font-weight:800}
+  .exbox .e2{font-size:2.2vh;opacity:.8;margin-top:.6vh}
+  .elimline{margin-top:1.6vh;font-size:3.6vh;font-weight:900;color:var(--gold);opacity:0;transition:opacity .6s}
+  .elimline.on{opacity:1}
+  /* 排行榜 */
+  .bh{font-size:5.4vh;font-weight:900;color:var(--gold);margin-bottom:1.6vh}
+  #rows{position:relative;width:70vw;height:66vh}
+  .row{position:absolute;left:0;right:0;height:6vh;display:flex;align-items:center;gap:2vw;background:rgba(255,255,255,.1);border-radius:1.6vh;padding:0 2.4vw;font-size:3.6vh;font-weight:800;transition:transform 1.1s cubic-bezier(.3,1.2,.4,1),opacity .6s}
+  .row .rk{width:6vh;text-align:center;font-size:4vh;color:var(--gold)}
+  .row .nm{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .row .sc{font-variant-numeric:tabular-nums;min-width:16vh;text-align:right}
+  .row .dl{width:9vh;font-size:2.6vh;text-align:center}
+  .row .up{color:#3fe39a}.row .dn{color:#ff7a86}
+  .row.r1{background:linear-gradient(90deg,rgba(255,210,63,.45),rgba(255,210,63,.12))}
+  .row.r2{background:linear-gradient(90deg,rgba(220,220,235,.38),rgba(255,255,255,.1))}
+  .row.r3{background:linear-gradient(90deg,rgba(214,140,80,.4),rgba(255,255,255,.1))}
+  .row.out{opacity:.45}
+  .bsub{font-size:2.8vh;opacity:.85;margin-top:1vh}
+  /* 頒獎台 */
+  #fw{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .podium{display:flex;align-items:flex-end;gap:3vw;z-index:2;margin-top:3vh}
+  .pcol{display:flex;flex-direction:column;align-items:center;width:24vw;opacity:0;transform:translateY(8vh);transition:all .9s cubic-bezier(.2,1.4,.4,1)}
+  .pcol.on{opacity:1;transform:none}
+  .pname{font-size:5.6vh;font-weight:900;text-align:center;max-width:24vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pscore{font-size:3vh;opacity:.9;margin-bottom:1.2vh}
+  .medal{font-size:10vh;line-height:1}
+  .block{width:100%;border-radius:2vh 2vh 0 0;display:flex;align-items:flex-start;justify-content:center;font-size:10vh;font-weight:900;padding-top:2vh;color:rgba(0,0,0,.35)}
+  .p1 .block{height:34vh;background:linear-gradient(180deg,#ffe066,#e0a800)}
+  .p2 .block{height:24vh;background:linear-gradient(180deg,#f1f1f7,#a9a9bd)}
+  .p3 .block{height:17vh;background:linear-gradient(180deg,#f0a868,#b8682a)}
+  .p1 .pname{font-size:7vh;color:var(--gold)}
+  /* 主持人列 */
+  .bar-host{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:.6vw;align-items:center;justify-content:center;padding:.8vh 1vw;background:rgba(0,0,0,.55);opacity:.18;transition:opacity .3s;z-index:20;font-size:1.7vh}
+  .bar-host:hover,.bar-host.pin{opacity:1}
+  .bar-host button{background:#2c2160;color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:.8vh;padding:.7vh 1.1vw;font-size:1.8vh;cursor:pointer;font-family:inherit}
+  .bar-host button:hover{background:#41318a}
+  .bar-host button:disabled{opacity:.3;cursor:default}
+  .bar-host button.glow{background:var(--gold);color:#1b1140;font-weight:800;animation:beat 1s infinite}
+  .bar-host button.sel{background:var(--gold);color:#1b1140;font-weight:800}
+  .bar-host .info{opacity:.8;margin:0 .6vw}
+  .demo{position:fixed;left:1vw;top:.6vh;font-size:1.5vh;opacity:.5;z-index:21;pointer-events:none}
+  .center-msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:4vh;font-weight:800;z-index:10;background:rgba(20,12,51,.85)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50}
+  .modal .box{background:#241a57;border-radius:2vh;padding:3vh 3vw;min-width:44vh;font-size:2.2vh}
+  .modal label{display:block;margin:1.4vh 0 .4vh}
+  .modal input,.modal select{width:100%;font-size:2.2vh;padding:.8vh;border-radius:.8vh;border:0;font-family:inherit}
+  .modal .btns{display:flex;gap:1vw;justify-content:flex-end;margin-top:2.4vh}
+  .modal button{font-size:2.2vh;padding:.8vh 2vw;border-radius:.8vh;border:0;cursor:pointer;font-family:inherit}
+  .toast{position:fixed;top:2vh;left:50%;transform:translateX(-50%);background:var(--gold);color:#1b1140;padding:1vh 3vh;border-radius:3vh;font-weight:800;font-size:2.4vh;z-index:60;transition:opacity .4s}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="stage">
+  <!-- 開場 -->
+  <section class="sec" id="lobby">
+    <div class="lobL">
+      <h1 class="title">真的還假的？</h1>
+      <div class="subt">True or False? ・ Thật hay Giả?</div>
+      <div class="qrbox"><div id="qr"></div></div>
+      <div class="url" id="url"></div>
+    </div>
+    <div class="lobR">
+      <div style="text-align:center"><span class="mode" id="lobMode"></span></div>
+      <div class="cnt">已加入 Players<b id="lobCnt">0</b></div>
+      <div id="names"></div>
+    </div>
+  </section>
+
+  <!-- 作答中 -->
+  <section class="sec" id="question">
+    <div class="qtop"><span class="pill" id="qNo"></span><span class="pill" id="qAlive"></span></div>
+    <div class="qmain" id="qMain"></div>
+    <div class="qsub" id="qSub"></div>
+    <div class="ring" id="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="8"/><circle id="arc" cx="50" cy="50" r="44" fill="none" stroke="#ffd23f" stroke-width="8" stroke-linecap="round" stroke-dasharray="276.46" stroke-dashoffset="0"/></svg><div class="num" id="tNum"></div></div>
+    <div class="ready" id="ready"></div>
+    <div class="answered" id="answered"></div>
+  </section>
+
+  <!-- 公布結果 -->
+  <section class="sec" id="reveal">
+    <div class="rq" id="rQ"></div>
+    <div class="bars">
+      <div class="stamp" id="stamp"></div>
+      <div class="bar T" id="barT"><div class="fill"></div><div class="pct">0%</div><div class="lab">⭕ 真的 <span class="ppl"></span></div></div>
+      <div class="bar F" id="barF"><div class="fill"></div><div class="pct">0%</div><div class="lab">❌ 假的 <span class="ppl"></span></div></div>
+    </div>
+    <div class="noans" id="noAns"></div>
+    <div class="exbox" id="exBox"><div class="e1" id="ex1"></div><div class="e2" id="ex2"></div></div>
+    <div class="elimline" id="elimLine"></div>
+  </section>
+
+  <!-- 排行榜 -->
+  <section class="sec" id="board">
+    <div class="bh" id="bh">🏅 排行榜 TOP 10</div>
+    <div id="rows"></div>
+    <div class="bsub" id="bsub"></div>
+  </section>
+
+  <!-- 頒獎台 -->
+  <section class="sec" id="podium">
+    <h1 class="title" style="font-size:8vh">🏆 恭喜得獎 🏆</h1>
+    <div class="podium">
+      <div class="pcol p2" id="pc2"><div class="medal">🥈</div><div class="pname"></div><div class="pscore"></div><div class="block">2</div></div>
+      <div class="pcol p1" id="pc1"><div class="medal">🥇</div><div class="pname"></div><div class="pscore"></div><div class="block">1</div></div>
+      <div class="pcol p3" id="pc3"><div class="medal">🥉</div><div class="pname"></div><div class="pscore"></div><div class="block">3</div></div>
+    </div>
+  </section>
+</div>
+<canvas id="fw" class="hide"></canvas>
+<div class="center-msg hide" id="needLogin">請先按下方「🔑 主持人登入」</div>
+<div class="demo hide" id="demo">DEMO 單機試玩模式（還沒接上 Firebase，只能在同一個瀏覽器裡玩）</div>
+
+<div class="bar-host" id="hb">
+  <button id="bLogin">🔑 主持人登入</button>
+  <span class="info" id="who"></span>
+  <button id="bModeS" title="積分模式">🏅 積分模式</button>
+  <button id="bModeE" title="淘汰模式">💀 淘汰模式</button>
+  <button id="bStart">▶ 開始遊戲 (S)</button>
+  <button id="bReveal">📣 公布結果 (P)</button>
+  <button id="bNext">⏭ 下一題 (N)</button>
+  <button id="bSkip">↷ 跳過題目 (K)</button>
+  <button id="bRestart">↺ 重新開始 (R)</button>
+  <button id="bBots">🤖 模擬50假玩家</button>
+  <button id="bRmBots">移除假玩家</button>
+  <button id="bClear">清空玩家</button>
+  <button id="bSet">⚙ 設定</button>
+  <button id="bFull">⛶ 全螢幕 (F)</button>
+  <span class="info" id="hint"></span>
+</div>
+
+<div class="modal hide" id="mLogin"><div class="box">
+  <div style="font-size:3vh;font-weight:800">主持人登入</div>
+  <label>Email</label><input id="lEmail" type="email">
+  <label>密碼</label><input id="lPw" type="password">
+  <div id="lErr" style="color:#ff9a9a;margin-top:1vh;min-height:2.4vh"></div>
+  <div class="btns"><button id="lCancel">取消</button><button id="lGo" style="background:#ffd23f;font-weight:800">登入</button></div>
+</div></div>
+
+<div class="modal hide" id="mSet"><div class="box">
+  <div style="font-size:3vh;font-weight:800">⚙ 設定（下一題生效）</div>
+  <label>每題作答秒數</label><input id="sSec" type="number" min="3" max="60">
+  <label>題目出現後幾秒開放作答</label><input id="sReady" type="number" min="1" max="10">
+  <label>模式</label><select id="sMode"><option value="score">積分模式（全部答完比總分）</option><option value="elim">淘汰模式（答錯就淘汰）</option></select>
+  <label>淘汰模式：剩下 ≤ 幾人結束</label><input id="sEnd" type="number" min="1" max="50">
+  <label>出題順序</label><select id="sOrder"><option value="random">隨機（真假穿插）</option><option value="sequence">照題庫順序</option></select>
+  <label>積分模式題數（0 = 全部 <span id="sQN"></span> 題）</label><input id="sCount" type="number" min="0">
+  <div class="btns"><button id="sReset">恢復 config.js 預設</button><button id="sCancel">取消</button><button id="sOk" style="background:#ffd23f;font-weight:800">儲存</button></div>
+</div></div>
+
+<script src="config.js"></script>
+<script src="questions.js"></script>
+<script src="common.js"></script>
+<script>
+(async () => {
+const { C, DEMO, ROOT, host, $, $$, esc, rid, fmt, sleep, calcPoints, loadScript } = TF;
+const QS = window.TF_QUESTIONS || [];
+const P = p => ROOT + "/" + p;
+const LANGS = (C.screenLangs && C.screenLangs.length ? C.screenLangs : ["zh", "vi", "en"]);
+if (DEMO) $("#demo").classList.remove("hide");
+
+// ---------- 設定 ----------
+const DEF = { answerSec: C.answerSec || 10, readySec: C.readySec != null ? C.readySec : 3, mode: C.mode === "elim" ? "elim" : "score", elimEndCount: C.elimEndCount || 3, questionOrder: C.questionOrder === "sequence" ? "sequence" : "random", questionCount: C.questionCount || 0 };
+let S = Object.assign({}, DEF); try { Object.assign(S, JSON.parse(localStorage.getItem("tf_settings") || "{}")); } catch (e) {}
+const saveS = () => localStorage.setItem("tf_settings", JSON.stringify(S));
+
+// ---------- 狀態 ----------
+let isHost = DEMO, st = null, players = {}, meta = null, answersNow = {}, unAns = null, ansRk = null;
+let revealAnim = null, boardShownRk = null, podiumShown = null, botTimers = [], busy = false;
+const now = () => host.now();
+
+function toast(msg, ms = 2600) { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => { t.style.opacity = 0; setTimeout(() => t.remove(), 500); }, ms); }
+function show(id) { $$(".sec").forEach(s => s.classList.toggle("on", s.id === id)); $("#fw").classList.toggle("hide", id !== "podium"); }
+const plist = () => Object.entries(players || {}).map(([id, p]) => Object.assign({ id }, p));
+const alivePlayers = () => plist().filter(p => !p.out);
+
+// ---------- 音效（簡單的嗶聲） ----------
+let actx = null;
+function beep(f = 880, d = .08, type = "sine", vol = .15) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = f; g.gain.value = vol; g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {} }
+const fanfare = () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .25, "triangle", .2), i * 130));
+
+// ---------- QR Code ----------
+const joinURL = new URL("./", location.href).href;
+$("#url").textContent = joinURL;
+(async () => {
+  try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"); new QRCode($("#qr"), { text: joinURL, width: 600, height: 600, correctLevel: QRCode.CorrectLevel.M }); }
+  catch (e) { $("#qr").innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(joinURL)}">`; }
+})();
+
+// ---------- 連線與登入 ----------
+try { await host.init(); } catch (e) { toast("Firebase 載入失敗，請檢查網路"); }
+function updateWho() {
+  $("#who").textContent = DEMO ? "DEMO" : (isHost ? "主持人：" + host.auth.currentUser.email : "未登入");
+  $("#bLogin").textContent = (!DEMO && isHost) ? "登出" : "🔑 主持人登入";
+  $("#bLogin").classList.toggle("hide", DEMO);
+  $("#needLogin").classList.toggle("hide", isHost);
+}
+let subs = [];
+function startSubs() {
+  subs.forEach(u => u()); subs = [];
+  subs.push(host.on(P("state"), v => { st = v; onState(); }));
+  subs.push(host.on(P("players"), v => { players = v || {}; onPlayers(); }));
+  subs.push(host.on(P("host"), v => { meta = v; }));
+}
+updateWho();
+$("#bLogin").onclick = () => { if (isHost && !DEMO) { host.auth.signOut(); return; } $("#mLogin").classList.remove("hide"); $("#lEmail").value = C.hostEmail && !/example/.test(C.hostEmail) ? C.hostEmail : ""; setTimeout(() => ($("#lEmail").value ? $("#lPw") : $("#lEmail")).focus(), 50); };
+$("#lCancel").onclick = () => $("#mLogin").classList.add("hide");
+$("#lPw").onkeydown = e => { if (e.key === "Enter") $("#lGo").click(); };
+$("#lGo").onclick = async () => {
+  $("#lErr").textContent = "";
+  try { await host.auth.signInWithEmailAndPassword($("#lEmail").value.trim(), $("#lPw").value); $("#mLogin").classList.add("hide"); }
+  catch (e) { $("#lErr").textContent = e.code || e.message; }
+};
+
+// ---------- 名次計算 ----------
+function rankKey(p, mode) { return mode === "elim" ? [p.out ? 0 : 1, p.out ? (p.outQn || 0) : 0, p.score || 0] : [p.score || 0]; }
+function cmpKey(a, b) { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return b[i] - a[i]; return 0; }
+function computeRanks(list, mode) {
+  const arr = list.map(p => ({ p, k: rankKey(p, mode) }));
+  arr.sort((x, y) => cmpKey(x.k, y.k) || (x.p.joinedAt || 0) - (y.p.joinedAt || 0));
+  const out = {}; let lastK = null, lastR = 0;
+  arr.forEach((x, i) => { const r = (lastK && cmpKey(lastK, x.k) === 0) ? lastR : i + 1; out[x.p.id] = r; lastK = x.k; lastR = r; });
+  return { ranks: out, order: arr.map(x => x.p.id) };
+}
+
+// ---------- 玩家名單（開場）＋自動編號重複名字 ----------
+let seenNames = new Set(), naming = false;
+async function onPlayers() {
+  const list = plist();
+  if (isHost && !naming) {
+    const need = list.filter(p => !p.dn).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+    if (need.length) {
+      naming = true;
+      const used = new Set(list.filter(p => p.dn).map(p => p.dn));
+      const upd = {};
+      for (const p of need) { let dn = p.name; let n = 2; while (used.has(dn)) dn = `${p.name}#${n++}`; used.add(dn); upd[P(`players/${p.id}/dn`)] = dn; }
+      try { await host.update(upd); } catch (e) { console.warn(e); }
+      naming = false;
+    }
+    if (st && st.count !== list.length) host.set(P("state/count"), list.length).catch(() => {});
+  }
+  renderLobby();
+  updateButtons();
+}
+function renderLobby() {
+  if (!st || st.phase !== "lobby") return;
+  const list = plist().sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+  $("#lobCnt").textContent = fmt(list.length);
+  const box = $("#names"); const ids = new Set(list.map(p => p.id));
+  $$(".chip", box).forEach(c => { if (!ids.has(c.dataset.id)) c.remove(); });
+  for (const p of list) {
+    let c = box.querySelector(`[data-id="${p.id}"]`);
+    if (!c) { c = document.createElement("span"); c.className = "chip" + (seenNames.size ? " new" : ""); c.dataset.id = p.id; box.prepend(c); setTimeout(() => c.classList.remove("new"), 1600); seenNames.add(p.id); if (seenNames.size > 1) beep(1200, .05); }
+    c.textContent = p.dn || p.name;
+  }
+  if (!list.length) seenNames = new Set();
+}
+function modeText(m) { return m === "elim" ? `💀 淘汰模式：答錯就淘汰，剩 ${S.elimEndCount} 人以下結束` : "🏅 積分模式：答對越快分數越高"; }
+
+// ---------- 狀態變化 → 畫面 ----------
+async function onState() {
+  if (!st && isHost) { await host.set(P("state"), { gid: rid(6), phase: "lobby", mode: S.mode, count: 0 }); return; }
+  if (!st) return;
+  if (st.phase === "answer" && ansRk !== st.rk) watchAnswers(st.rk);
+  render();
+  updateButtons();
+}
+function render() {
+  if (!st) return;
+  if (revealAnim && revealAnim.rk === st.rk && (st.phase === "answer" || st.phase === "reveal")) { show("reveal"); return; }
+  if (st.phase === "lobby") { show("lobby"); $("#lobMode").textContent = modeText(st.mode || S.mode); renderLobby(); }
+  else if (st.phase === "answer") { show("question"); renderQuestion(); }
+  else if (st.phase === "reveal") { show("reveal"); renderRevealStatic(); }
+  else if (st.phase === "board") { show("board"); renderBoard(); }
+  else if (st.phase === "end") { show("podium"); renderPodium(); }
+}
+
+function qLines(o) { const main = o[LANGS[0]] || o.zh; const sub = LANGS.slice(1).map(l => o[l]).filter(Boolean); return { main, sub }; }
+let qRendered = null;
+function renderQuestion() {
+  if (qRendered !== st.rk) {
+    qRendered = st.rk;
+    const { main, sub } = qLines(st.q || {});
+    $("#qMain").textContent = main;
+    $("#qSub").innerHTML = sub.map(esc).join("<br>");
+    $("#qNo").textContent = `第 ${st.qn}${st.mode === "score" && st.qTotal ? " / " + st.qTotal : ""} 題`;
+    $("#qAlive").textContent = st.mode === "elim" ? `💀 存活 ${st.alive} 人` : "🏅 積分模式";
+  }
+}
+function watchAnswers(rk) {
+  if (unAns) unAns(); answersNow = {}; ansRk = rk;
+  unAns = host.on(P("answers/" + rk), v => { answersNow = v || {}; });
+}
+
+// 計時迴圈
+let lastTick = -1;
+function loop() {
+  requestAnimationFrame(loop);
+  if (!st || st.phase !== "answer" || (revealAnim && revealAnim.rk === st.rk)) return;
+  const n = now(), dur = st.deadline - st.startAt;
+  const before = n < st.startAt, left = Math.max(0, st.deadline - n);
+  const sec = Math.ceil(left / 1000);
+  $("#tNum").textContent = before ? Math.ceil(dur / 1000) : (left > 0 ? sec : "0");
+  $("#arc").style.strokeDashoffset = before ? 0 : 276.46 * (1 - left / dur);
+  $("#ring").classList.toggle("low", !before && left > 0 && sec <= 3);
+  $("#ready").innerHTML = before ? `準備… ${Math.ceil((st.startAt - n) / 1000)}` : (left <= 0 ? `<span class="tu">⏰ 時間到！</span>` : "");
+  const tot = st.alive || 0, cnt = Object.keys(answersNow).length;
+  $("#answered").innerHTML = `已作答 <b>${cnt}</b> / ${tot}`;
+  if (!before && left > 0 && sec <= 3 && sec !== lastTick) { lastTick = sec; beep(sec === 1 ? 1100 : 900, .12, "square", .1); }
+  if (left <= 0 && lastTick !== 0) { lastTick = 0; beep(440, .4, "sawtooth", .12); updateButtons(); }
+}
+requestAnimationFrame(loop);
+
+// ---------- 遊戲流程 ----------
+function buildOrder() {
+  const idx = QS.map((_, i) => i);
+  if (S.questionOrder === "sequence") return idx;
+  // 隨機，但同一種答案不連續超過 2 題
+  for (let tries = 0; tries < 300; tries++) {
+    const a = idx.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+    let ok = true; for (let i = 2; i < a.length; i++) if (QS[a[i]].ans === QS[a[i - 1]].ans && QS[a[i]].ans === QS[a[i - 2]].ans) { ok = false; break; }
+    if (ok) return a;
+  }
+  return idx;
+}
+function qTotalFor(mode) { return mode === "score" ? (S.questionCount > 0 ? Math.min(S.questionCount, QS.length) : QS.length) : 0; }
+
+async function guard(fn) { if (busy) return; busy = true; try { await fn(); } catch (e) { console.error(e); toast("失敗：" + (e.code || e.message), 5000); } finally { busy = false; updateButtons(); } }
+
+async function startGame() {
+  if (!isHost || !st || st.phase !== "lobby") return;
+  const list = plist();
+  if (!list.length) return toast("還沒有玩家加入");
+  if (S.mode === "elim" && list.length <= S.elimEndCount) return toast(`淘汰模式需要超過 ${S.elimEndCount} 位玩家`);
+  if (!QS.length) return toast("題庫是空的");
+  const upd = {};
+  for (const p of list) { upd[P(`players/${p.id}/score`)] = 0; upd[P(`players/${p.id}/rank`)] = null; upd[P(`players/${p.id}/out`)] = null; upd[P(`players/${p.id}/outQn`)] = null; upd[P(`players/${p.id}/outRk`)] = null; upd[P(`players/${p.id}/last`)] = null; }
+  upd[P("answers")] = null;
+  upd[P("host")] = { order: buildOrder(), pos: 0, asked: 0, mode: S.mode, endCount: S.elimEndCount, qTotal: qTotalFor(S.mode), prevRanks: {} };
+  await host.update(upd);
+  meta = await host.get(P("host"));
+  players = (await host.get(P("players"))) || {};
+  await startRound();
+}
+
+async function startRound() {
+  meta = meta || await host.get(P("host"));
+  const idx = meta.order[meta.pos]; const q = QS[idx];
+  const rk = st.gid + "q" + (meta.asked + 1) + rid(3);
+  const readyMs = Math.max(1, S.readySec) * 1000, durMs = Math.max(3, S.answerSec) * 1000;
+  const startAt = now() + readyMs + 300;
+  const alive = alivePlayers().length;
+  revealAnim = null; lastTick = -1;
+  await host.update({
+    [P("state")]: { gid: st.gid, phase: "answer", mode: meta.mode, count: plist().length, alive, rk, qn: meta.asked + 1, qTotal: meta.qTotal || 0, q: { zh: q.zh, en: q.en, vi: q.vi }, startAt, deadline: startAt + durMs, durMs },
+    [P("host/cur")]: idx,
+  });
+  scheduleBots(rk, startAt, durMs, q.ans);
+}
+
+function scheduleBots(rk, startAt, durMs, ans) {
+  clearBots();
+  const bots = alivePlayers().filter(p => p.id.startsWith("bot"));
+  for (const b of bots) {
+    if (Math.random() < .04) continue;
+    const at = startAt + 400 + Math.random() * (durMs - 900);
+    const a = Math.random() < .65 ? ans : !ans;
+    botTimers.push(setTimeout(() => { if (st && st.rk === rk && st.phase === "answer") host.set(P(`answers/${rk}/${b.id}`), { a, t: host.TS }).catch(() => {}); }, Math.max(0, at - now())));
+  }
+}
+function clearBots() { botTimers.forEach(clearTimeout); botTimers = []; }
+
+async function doReveal() {
+  if (!st || st.phase !== "answer") return;
+  const wait = st.deadline + 1000 - now();
+  if (wait > 0) { toast(`作答時間還沒到（還有 ${Math.ceil(wait / 1000)} 秒）`); return; }
+  clearBots();
+  meta = await host.get(P("host"));
+  const rk = st.rk, q = QS[meta.cur], ans = q.ans;
+  const answers = (await host.get(P("answers/" + rk))) || {};
+  const list = plist(); const eligible = list.filter(p => !p.out);
+  const prevRanks = {}; list.forEach(p => { if (p.rank) prevRanks[p.id] = p.rank; });
+  let nT = 0, nF = 0, nN = 0;
+  const res = {};
+  for (const p of eligible) {
+    const a = answers[p.id]; const has = a && typeof a.a === "boolean" && a.t <= st.deadline + 800;
+    if (has) { a.a ? nT++ : nF++; } else nN++;
+    const ok = has && a.a === ans;
+    res[p.id] = { a: has ? a.a : null, ok, pts: ok ? calcPoints(true, a.t, st.startAt, st.durMs) : 0 };
+  }
+  const elim = meta.mode === "elim";
+  const wrong = eligible.filter(p => !res[p.id].ok);
+  const isVoid = elim && eligible.length > 0 && wrong.length === eligible.length;
+  // 套用分數、淘汰
+  const after = list.map(p => {
+    const r = res[p.id]; if (!r) return p;
+    const np = Object.assign({}, p, { score: (p.score || 0) + r.pts });
+    if (elim && !r.ok && !isVoid) { np.out = true; np.outQn = st.qn; np.outRk = rk; }
+    return np;
+  });
+  const { ranks } = computeRanks(after, meta.mode);
+  const aliveAfter = after.filter(p => !p.out).length;
+  const upd = {};
+  for (const p of after) {
+    upd[P(`players/${p.id}/rank`)] = ranks[p.id];
+    const r = res[p.id]; if (!r) continue;
+    upd[P(`players/${p.id}/score`)] = p.score;
+    if (p.out && p.outRk === rk) { upd[P(`players/${p.id}/out`)] = true; upd[P(`players/${p.id}/outQn`)] = st.qn; upd[P(`players/${p.id}/outRk`)] = rk; }
+    upd[P(`players/${p.id}/last`)] = { rk, a: r.a, ok: r.ok, pts: r.pts, outNow: !!(p.out && p.outRk === rk), void: isVoid };
+  }
+  const stats = { t: nT, f: nF, n: nN };
+  Object.assign(upd, {
+    [P("state/phase")]: "reveal", [P("state/ans")]: ans, [P("state/ex")]: q.ex || null, [P("state/stats")]: stats,
+    [P("state/alive")]: aliveAfter, [P("state/count")]: list.length, [P("state/void")]: isVoid,
+    [P("host/asked")]: meta.asked + 1, [P("host/prevRanks")]: prevRanks,
+  });
+  // 畫面動畫：先比例，再揭曉；揭曉那一刻才寫回資料庫（手機不會比大螢幕先爆雷）
+  revealAnim = { rk };
+  show("reveal");
+  setupReveal(st.q, stats);
+  await sleep(150);
+  animateBars(stats);
+  beep(300, 1.8, "triangle", .08);
+  await sleep(3400);
+  await host.update(upd);
+  showAnswer(ans, q.ex, stats, elim ? { killed: wrong.length, alive: aliveAfter, isVoid } : null);
+  fanfare();
+}
+
+function setupReveal(qo, stats) {
+  const { main } = qLines(qo || {});
+  $("#rQ").textContent = main;
+  ["T", "F"].forEach(k => { const b = $("#bar" + k); b.classList.remove("win", "lose"); b.querySelector(".fill").style.transition = "none"; b.querySelector(".fill").style.height = "0"; b.querySelector(".pct").textContent = "0%"; b.querySelector(".ppl").textContent = ""; });
+  $("#stamp").classList.remove("on"); $("#exBox").classList.remove("on"); $("#elimLine").classList.remove("on");
+  $("#noAns").textContent = "";
+  void $("#barT").offsetWidth;
+}
+function pcts(stats) { const tot = stats.t + stats.f; if (!tot) return [0, 0]; const t = Math.round(stats.t / tot * 100); return [t, 100 - t]; }
+function animateBars(stats) {
+  const [pt, pf] = pcts(stats);
+  [["T", pt, stats.t], ["F", pf, stats.f]].forEach(([k, pc, n]) => {
+    const b = $("#bar" + k), fill = b.querySelector(".fill");
+    fill.style.transition = ""; fill.style.height = Math.max(pc, 2) + "%";
+    const t0 = performance.now(); const el = b.querySelector(".pct");
+    (function step(t) { const f = Math.min(1, (t - t0) / 2000); el.textContent = Math.round(pc * (1 - Math.pow(1 - f, 3))) + "%"; if (f < 1) requestAnimationFrame(step); })(t0);
+    b.querySelector(".ppl").textContent = `(${n} 人)`;
+  });
+  $("#noAns").textContent = stats.n ? `未作答 ${stats.n} 人` : "";
+}
+function showAnswer(ans, ex, stats, el) {
+  const k = ans ? "T" : "F";
+  $("#bar" + k).classList.add("win"); $("#bar" + (ans ? "F" : "T")).classList.add("lose");
+  const stamp = $("#stamp"); stamp.textContent = ans ? "⭕ 真的！" : "❌ 假的！";
+  stamp.style.left = ans ? "6%" : "auto"; stamp.style.right = ans ? "auto" : "6%";
+  stamp.classList.add("on");
+  if (ex) { const { main, sub } = qLines(ex); $("#ex1").textContent = main; $("#ex2").innerHTML = sub.map(esc).join("<br>"); $("#exBox").classList.add("on"); }
+  if (el) {
+    $("#elimLine").textContent = el.isVoid ? "😱 全場都答錯！這題不淘汰，全部復活！" : `💀 淘汰 ${el.killed} 人 ・ 剩下 ${el.alive} 人`;
+    $("#elimLine").classList.add("on");
+  }
+}
+function renderRevealStatic() {   // 重新整理後直接顯示結果
+  if (revealAnim && revealAnim.rk === st.rk) return;
+  revealAnim = { rk: st.rk };
+  const stats = st.stats || { t: 0, f: 0, n: 0 };
+  setupReveal(st.q, stats); animateBars(stats);
+  showAnswer(st.ans, st.ex, stats, st.mode === "elim" ? { killed: 0, alive: st.alive, isVoid: st.void } : null);
+  if (st.mode === "elim" && !st.void) $("#elimLine").textContent = `💀 剩下 ${st.alive} 人`;
+}
+
+function isEnded() {
+  if (!meta) return false;
+  if (meta.mode === "elim") return (st.alive || 0) <= meta.endCount || meta.pos + 1 >= meta.order.length;
+  return meta.asked >= meta.qTotal || meta.pos + 1 >= meta.order.length;
+}
+async function doNext() {
+  if (!st) return;
+  meta = await host.get(P("host"));
+  if (st.phase === "reveal") { await host.set(P("state/phase"), "board"); return; }
+  if (st.phase === "board") {
+    if (isEnded()) { await host.set(P("state/phase"), "end"); return; }
+    await host.set(P("host/pos"), meta.pos + 1); meta.pos++;
+    await startRound();
+  }
+}
+async function doSkip() {
+  if (!st || st.phase !== "answer") return;
+  clearBots();
+  meta = await host.get(P("host"));
+  await host.remove(P("answers/" + st.rk));
+  if (meta.pos + 1 >= meta.order.length) { toast("題目用完了，直接看排行榜"); await host.set(P("state/phase"), "board"); return; }
+  await host.set(P("host/pos"), meta.pos + 1); meta.pos++;
+  toast("↷ 已跳過，這題不算");
+  await startRound();
+}
+async function doRestart(keepMsg) {
+  clearBots(); revealAnim = null; boardShownRk = null; podiumShown = null;
+  const upd = { [P("answers")]: null, [P("host")]: null, [P("clock")]: null };
+  for (const p of plist()) { ["score", "rank", "out", "outQn", "outRk", "last"].forEach(k => upd[P(`players/${p.id}/${k}`)] = null); }
+  upd[P("state")] = { gid: rid(6), phase: "lobby", mode: S.mode, count: plist().length };
+  await host.update(upd);
+  seenNames = new Set(plist().map(p => p.id));
+}
+
+// ---------- 排行榜 ----------
+function renderBoard() {
+  const rk = st.rk;
+  const list = plist(); const mode = st.mode;
+  const { ranks, order } = computeRanks(list, mode);
+  const top = order.slice(0, 10).map(id => list.find(p => p.id === id));
+  const prev = (meta && meta.prevRanks) || {};
+  const rowH = 6.6; // vh
+  $("#bh").textContent = "🏅 排行榜 TOP 10";
+  $("#bsub").textContent = mode === "elim" ? `💀 存活 ${st.alive} 人 ・ 共 ${list.length} 人` : `第 ${st.qn}${st.qTotal ? " / " + st.qTotal : ""} 題後 ・ 共 ${list.length} 人`;
+  const box = $("#rows");
+  const animate = boardShownRk !== rk; boardShownRk = rk;
+  box.innerHTML = "";
+  // 舊順序（用上一題的名次）
+  const prevOrder = Object.keys(prev).sort((a, b) => prev[a] - prev[b]);
+  top.forEach((p, i) => {
+    const r = ranks[p.id]; const pr = prev[p.id];
+    const d = pr ? pr - r : null;
+    const last = p.last && p.last.rk === rk ? p.last : null;
+    const oldScore = (p.score || 0) - (last ? last.pts : 0);
+    const row = document.createElement("div");
+    row.className = "row" + (r <= 3 ? " r" + r : "") + (p.out ? " out" : "");
+    row.innerHTML = `<span class="rk">${r}</span><span class="nm">${p.out ? "💀 " : ""}${esc(p.dn || p.name)}</span><span class="dl">${d > 0 ? `<span class="up">▲${d}</span>` : d < 0 ? `<span class="dn">▼${-d}</span>` : (pr ? "–" : "")}</span><span class="sc">${fmt(animate ? oldScore : p.score)}</span>`;
+    const oldIdx = prevOrder.indexOf(p.id);
+    const fromIdx = animate ? (oldIdx >= 0 && oldIdx < 10 ? oldIdx : 11) : i;
+    row.style.transition = "none";
+    row.style.transform = `translateY(${fromIdx * rowH}vh)`;
+    row.style.opacity = animate && fromIdx >= 10 ? 0 : 1;
+    box.appendChild(row);
+    if (animate) {
+      setTimeout(() => {
+        row.style.transition = ""; row.style.transform = `translateY(${i * rowH}vh)`; row.style.opacity = 1;
+        const sc = row.querySelector(".sc"), t0 = performance.now(), a = oldScore, b = p.score || 0;
+        (function step(t) { const f = Math.min(1, (t - t0) / 1100); sc.textContent = fmt(Math.round(a + (b - a) * f)); if (f < 1) requestAnimationFrame(step); })(t0);
+      }, 500 + i * 60);
+    }
+  });
+  if (animate) setTimeout(() => beep(660, .15, "triangle", .12), 500);
+}
+
+// ---------- 頒獎台 ----------
+function renderPodium() {
+  const gid = st.gid + st.rk; if (podiumShown === gid) return; podiumShown = gid;
+  const list = plist(); const { ranks, order } = computeRanks(list, st.mode);
+  [1, 2, 3].forEach(n => { const c = $("#pc" + n); c.classList.remove("on"); c.querySelector(".pname").textContent = ""; c.querySelector(".pscore").textContent = ""; });
+  // 名次可能並列，依排序取前三位
+  order.slice(0, 3).forEach((id, i) => {
+    const p = list.find(x => x.id === id); const c = $("#pc" + (i + 1));
+    c.querySelector(".pname").textContent = p.dn || p.name;
+    c.querySelector(".pscore").textContent = `${fmt(p.score)} 分${ranks[id] !== i + 1 ? `（並列第 ${ranks[id]}）` : ""}`;
+    c.classList.toggle("hide", false);
+  });
+  [3, 2, 1].forEach((n, i) => setTimeout(() => { const c = $("#pc" + n); if (c.querySelector(".pname").textContent) { c.classList.add("on"); beep(500 + n * -60 + 400, .3, "triangle", .2); } }, 600 + i * 1100));
+  setTimeout(() => { fanfare(); fireworks(); }, 600 + 3 * 1100);
+}
+let fwRun = false;
+function fireworks() {
+  const cv = $("#fw"); const ctx = cv.getContext("2d"); fwRun = true;
+  const resize = () => { cv.width = innerWidth; cv.height = innerHeight; }; resize(); addEventListener("resize", resize);
+  let ps = [], t = 0;
+  (function tick() {
+    if (!st || st.phase !== "end") { fwRun = false; ctx.clearRect(0, 0, cv.width, cv.height); return; }
+    requestAnimationFrame(tick); t++;
+    ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.globalCompositeOperation = "lighter";
+    if (t % 28 === 0 || t === 1) {
+      const x = cv.width * (.15 + Math.random() * .7), y = cv.height * (.12 + Math.random() * .35), hue = Math.random() * 360;
+      for (let i = 0; i < 90; i++) { const a = Math.random() * Math.PI * 2, s = Math.random() * 6 + 2; ps.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 70 + Math.random() * 30, hue: hue + Math.random() * 40 }); }
+    }
+    ps = ps.filter(p => p.life-- > 0);
+    for (const p of ps) { p.vy += .06; p.vx *= .985; p.vy *= .985; p.x += p.vx; p.y += p.vy; ctx.fillStyle = `hsla(${p.hue},100%,62%,${Math.min(1, p.life / 40)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, 7); ctx.fill(); }
+  })();
+}
+
+// ---------- 按鈕 ----------
+function updateButtons() {
+  const ph = st ? st.phase : null, ok = isHost && !!st;
+  const timeUp = ph === "answer" && now() > st.deadline + 1000;
+  $("#bStart").disabled = !ok || ph !== "lobby";
+  $("#bReveal").disabled = !ok || ph !== "answer" || (revealAnim && revealAnim.rk === st.rk);
+  $("#bReveal").classList.toggle("glow", ok && timeUp && !(revealAnim && revealAnim.rk === st.rk));
+  $("#bNext").disabled = !ok || !(ph === "reveal" || ph === "board");
+  const last = ph === "board" && isEnded();
+  $("#bNext").textContent = ph === "reveal" ? "🏅 排行榜 (N)" : last ? "🏆 頒獎 (N)" : "⏭ 下一題 (N)";
+  $("#bNext").classList.toggle("glow", ok && (ph === "reveal" || ph === "board"));
+  $("#bSkip").disabled = !ok || ph !== "answer" || !!(revealAnim && revealAnim.rk === st.rk);
+  $("#bRestart").disabled = !ok || ph === "lobby";
+  ["bBots", "bRmBots", "bClear", "bModeS", "bModeE"].forEach(id => $("#" + id).disabled = !ok || ph !== "lobby");
+  $("#bModeS").classList.toggle("sel", S.mode === "score"); $("#bModeE").classList.toggle("sel", S.mode === "elim");
+  $("#hint").textContent = !ok ? "" : ph === "lobby" ? `${plist().length} 人・${S.mode === "elim" ? "淘汰" : "積分"}・${S.answerSec}秒` : ph === "answer" ? (timeUp ? "時間到 → 按 P 公布" : "作答中…") : ph === "reveal" ? "按 N 看排行榜" : ph === "board" ? (last ? "按 N 頒獎" : "按 N 下一題") : "";
+}
+setInterval(updateButtons, 500);
+async function setMode(m) { S.mode = m; saveS(); if (st && st.phase === "lobby" && isHost) await host.set(P("state/mode"), m); updateButtons(); render(); }
+$("#bModeS").onclick = () => setMode("score");
+$("#bModeE").onclick = () => setMode("elim");
+$("#bStart").onclick = () => guard(startGame);
+$("#bReveal").onclick = () => guard(doReveal);
+$("#bNext").onclick = () => guard(doNext);
+$("#bSkip").onclick = () => guard(doSkip);
+$("#bRestart").onclick = () => { if (confirm("重新開始？玩家會保留，分數歸零、全部復活，回到開場畫面。")) guard(doRestart); };
+$("#bBots").onclick = () => guard(async () => {
+  const upd = {}; for (let i = 1; i <= 50; i++) { const id = "bot" + String(i).padStart(2, "0"); upd[P("players/" + id)] = { name: "假玩家" + String(i).padStart(2, "0"), joinedAt: host.TS }; }
+  await host.update(upd);
+});
+$("#bRmBots").onclick = () => guard(async () => { const upd = {}; plist().filter(p => p.id.startsWith("bot")).forEach(p => upd[P("players/" + p.id)] = null); await host.update(upd); });
+$("#bClear").onclick = () => { if (confirm("清空所有玩家？大家要重新掃 QR Code 加入。")) guard(async () => { await host.update({ [P("players")]: null, [P("answers")]: null, [P("clock")]: null, [P("state/count")]: 0 }); seenNames = new Set(); $("#names").innerHTML = ""; }); };
+$("#bFull").onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {});
+
+// 設定
+function openSet() {
+  $("#sSec").value = S.answerSec; $("#sReady").value = S.readySec; $("#sMode").value = S.mode; $("#sEnd").value = S.elimEndCount; $("#sOrder").value = S.questionOrder; $("#sCount").value = S.questionCount; $("#sQN").textContent = QS.length;
+  $("#mSet").classList.remove("hide");
+}
+$("#bSet").onclick = openSet;
+$("#sCancel").onclick = () => $("#mSet").classList.add("hide");
+$("#sReset").onclick = () => { S = Object.assign({}, DEF); saveS(); openSet(); };
+$("#sOk").onclick = async () => {
+  const num = (v, d, lo, hi) => { v = parseInt(v, 10); return isNaN(v) ? d : Math.min(hi, Math.max(lo, v)); };
+  S.answerSec = num($("#sSec").value, DEF.answerSec, 3, 60); S.readySec = num($("#sReady").value, DEF.readySec, 1, 10);
+  S.elimEndCount = num($("#sEnd").value, DEF.elimEndCount, 1, 50); S.questionOrder = $("#sOrder").value; S.questionCount = num($("#sCount").value, 0, 0, QS.length);
+  saveS(); $("#mSet").classList.add("hide");
+  await setMode($("#sMode").value);
+  // 遊戲中改淘汰結束人數：同步給本場
+  if (st && st.phase !== "lobby" && isHost && meta) host.set(P("host/endCount"), S.elimEndCount).catch(() => {});
+  toast("已儲存");
+};
+
+// 快捷鍵
+const hb = $("#hb");
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "s") $("#bStart").disabled || $("#bStart").click();
+  else if (k === "p") $("#bReveal").disabled || $("#bReveal").click();
+  else if (k === "n") $("#bNext").disabled || $("#bNext").click();
+  else if (k === "k") $("#bSkip").disabled || $("#bSkip").click();
+  else if (k === "r") $("#bRestart").disabled || $("#bRestart").click();
+  else if (k === "f") $("#bFull").click();
+  else if (k === "h") hb.classList.toggle("pin");
+});
+if (DEMO) hb.classList.add("pin");
+// 啟動（放最後，確保上面的變數都已宣告）
+if (DEMO) { startSubs(); }
+else {
+  host.auth.onAuthStateChanged(u => {
+    const ok = !!u && (u.email || "").toLowerCase() === (C.hostEmail || "").toLowerCase();
+    if (u && !ok) { toast("這個帳號不是主持人（跟 config.js 的 hostEmail 不一樣）", 5000); host.auth.signOut(); }
+    isHost = ok; updateWho();
+    if (ok) startSubs(); else { subs.forEach(f => f()); subs = []; }
+  });
+}
+updateWho();
+updateButtons();
+})();
+</script>
+</body>
+</html>

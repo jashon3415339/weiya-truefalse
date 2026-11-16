@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1b1140">
+<title>真的還假的？</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:#fff;background:#1b1140;overflow:hidden}
+  body{background:radial-gradient(circle at 50% -10%,#4a2a9a 0,#1b1140 60%) fixed}
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-size:14px;opacity:.85;min-height:40px}
+  .top .me{font-weight:700;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dot{width:11px;height:11px;border-radius:50%;background:#2ee66b;display:inline-block;box-shadow:0 0 8px #2ee66b}
+  .dot.bad{background:#ff3b3b;box-shadow:0 0 8px #ff3b3b;animation:blink .8s infinite}
+  @keyframes blink{50%{opacity:.2}}
+  .langbtn{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:16px;padding:4px 10px;font-size:13px;margin-right:8px}
+  .page{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px 24px;text-align:center;overflow:auto}
+  h1{font-size:40px;margin:0 0 4px;letter-spacing:2px;background:linear-gradient(90deg,#ffd23f,#ff8c42);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{opacity:.8;margin-bottom:26px}
+  .big-btn{display:block;width:100%;max-width:420px;margin:10px auto;padding:20px;border:0;border-radius:18px;font-size:24px;font-weight:800;color:#1b1140;background:#ffd23f;box-shadow:0 6px 0 #c79a00}
+  .big-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c79a00}
+  .big-btn.alt{background:#fff;box-shadow:0 6px 0 #9a9ab8}
+  input.name{width:100%;max-width:420px;font-size:26px;padding:16px;border-radius:14px;border:3px solid #ffd23f;text-align:center;background:#fff;color:#1b1140;outline:none}
+  .err{color:#ff8a8a;min-height:24px;margin-top:8px;font-weight:700}
+  .card{background:rgba(255,255,255,.1);border-radius:18px;padding:16px 18px;width:100%;max-width:440px;margin:8px auto}
+  .muted{opacity:.75}
+  .count{font-size:56px;font-weight:900;color:#ffd23f;line-height:1.1}
+  .pulse{animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{transform:scale(1.06);opacity:.8}}
+  .qhead{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:460px;font-weight:700;opacity:.9}
+  .timer{font-size:30px;font-weight:900;min-width:64px;text-align:right;color:#ffd23f}
+  .timer.low{color:#ff5a5a;animation:pulse .5s infinite}
+  .q{font-size:24px;font-weight:800;line-height:1.4;margin:12px 0 18px;width:100%;max-width:460px;background:rgba(255,255,255,.1);border-radius:16px;padding:16px}
+  .ans{display:flex;flex-direction:column;gap:14px;width:100%;max-width:460px;flex:1;max-height:420px}
+  .ans button{flex:1;border:0;border-radius:22px;font-size:40px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;min-height:110px;transition:transform .1s,opacity .2s}
+  .ans button:active{transform:scale(.97)}
+  .bT{background:linear-gradient(180deg,#27c27a,#159158);box-shadow:0 7px 0 #0c6b3f}
+  .bF{background:linear-gradient(180deg,#ff5d6c,#d62839);box-shadow:0 7px 0 #8f1424}
+  .ans button:disabled{opacity:.35}
+  .ans button.chosen{opacity:1;outline:6px solid #ffd23f}
+  .ans button.dim{opacity:.18}
+  .sent{font-size:22px;font-weight:800;margin-top:14px;color:#ffd23f}
+  .ready{font-size:64px;font-weight:900;color:#ffd23f}
+  .res{width:100%;max-width:460px;border-radius:24px;padding:26px 18px;margin-bottom:12px}
+  .res.ok{background:linear-gradient(180deg,#27c27a,#0f7f4b)}
+  .res.ng{background:linear-gradient(180deg,#ff5d6c,#a8182a)}
+  .res .t1{font-size:46px;font-weight:900}
+  .res .t2{font-size:56px;font-weight:900;color:#fff36b;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+  .pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  .shake{animation:shake .5s}
+  @keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+  .ex{font-size:18px;line-height:1.5;text-align:left}
+  .stats{display:flex;gap:10px;width:100%;max-width:460px}
+  .stats .card{margin:0;flex:1}
+  .stats b{font-size:28px;color:#ffd23f;display:block}
+  .tag{display:inline-block;padding:4px 12px;border-radius:12px;background:rgba(255,255,255,.15);font-weight:700;margin-bottom:10px}
+  .banner{background:#ffd23f;color:#1b1140;font-weight:800;border-radius:12px;padding:8px 12px;margin:6px auto;max-width:460px}
+  .demo{position:fixed;bottom:4px;left:0;right:0;text-align:center;font-size:11px;opacity:.5;pointer-events:none}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top"><span class="me" id="meName"></span><span><button class="langbtn hide" id="langBtn">🌐</button><span class="dot" id="dot"></span></span></div>
+  <div class="page" id="page"></div>
+</div>
+<div class="demo hide" id="demo">DEMO 單機試玩模式</div>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(() => {
+const { C, DEMO, ROOT, TS, api, $, esc, rid, fmt, charLen, tr, sleep, confetti } = TF;
+if (DEMO) $("#demo").classList.remove("hide");
+
+const LS = { get: k => { try { return localStorage.getItem("tf_" + k); } catch (e) { return null; } }, set: (k, v) => { try { v == null ? localStorage.removeItem("tf_" + k) : localStorage.setItem("tf_" + k, v); } catch (e) {} } };
+let pid = LS.get("pid"); if (!pid) { pid = rid(20); LS.set("pid", pid); }
+let lang = LS.get("lang");
+let view = lang ? "boot" : "lang";   // lang | name | joined | late
+let st = null, me = null, offset = 0, lastGid = null, lastRk = null, polls = 0, fetchingMe = false;
+let answerState = {};                // rk -> {a, status:'sending'|'sent'|'late'}
+let shownResultRk = null, lastRenderKey = "";
+const T = (k, v) => tr(lang || "zh", k, v);
+const sNow = () => Date.now() + offset;
+const P = path => ROOT + "/" + path;
+
+function setDot(ok) { $("#dot").classList.toggle("bad", !ok); }
+function qText(q) { return q ? (q[lang] || q.zh) : ""; }
+
+// ---------- 時間校正：寫入伺服器時間並量來回時間 ----------
+async function syncClock() {
+  if (DEMO) { offset = 0; return; }
+  let best = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const t0 = Date.now(); const r = await api.put(P("clock/" + pid), TS); const t1 = Date.now();
+      if (r.ok && typeof r.data === "number") { const rtt = t1 - t0; if (!best || rtt < best.rtt) best = { rtt, off: r.data - (t0 + t1) / 2 }; }
+    } catch (e) {}
+    await sleep(150);
+  }
+  if (best) offset = best.off;
+}
+
+async function fetchMe() {
+  try { me = await api.get(P("players/" + pid)); setDot(true); } catch (e) { setDot(false); }
+  return me;
+}
+
+// ---------- 主迴圈：每 1.5 秒問一次狀態 ----------
+async function poll() {
+  try {
+    st = await api.get(P("state")) || { phase: "lobby" };
+    setDot(true);
+  } catch (e) { setDot(false); setTimeout(poll, 1500); return; }
+  polls++;
+  if (st.gid !== lastGid) {             // 主持人重新開始
+    if (lastGid != null) { answerState = {}; shownResultRk = null; }
+    lastGid = st.gid;
+    if (view === "joined" || view === "late") await fetchMe();
+  }
+  if (view === "joined") {
+    const needMe =
+      ((st.phase === "reveal" || st.phase === "board") && !(me && me.last && me.last.rk === st.rk) && !(me && me.out && me.outRk !== st.rk)) ||
+      (st.phase === "end" && polls % 3 === 0) ||
+      (st.phase === "lobby" && (!me || !me.dn || polls % 4 === 0)) ||
+      (st.rk !== lastRk);
+    if (needMe) {
+      await fetchMe();
+      if (!me) { view = "name"; }         // 主持人清空玩家
+    }
+  }
+  if (view === "late" && st.phase === "lobby") { view = "name"; }
+  lastRk = st.rk;
+  render();
+  setTimeout(poll, 1500);
+}
+
+// ---------- 畫面 ----------
+function setPage(html, key) {
+  if (key && key === lastRenderKey) return false;
+  lastRenderKey = key || Math.random();
+  $("#page").innerHTML = html; return true;
+}
+function topBar() {
+  $("#meName").textContent = (view === "joined" && me) ? (me.dn || me.name || "") : (view === "late" ? "👀 " + T("spectate") : "");
+  $("#langBtn").classList.toggle("hide", view === "lang");
+  $("#langBtn").textContent = "🌐 " + ({ zh: "中文", en: "EN", vi: "VI" }[lang] || "");
+}
+
+function render() {
+  topBar();
+  if (view === "lang") return renderLang();
+  if (view === "boot") return;
+  if (view === "name") {
+    if (st && st.phase && st.phase !== "lobby") { view = "late"; }
+    else return renderName();
+  }
+  if (!st) return;
+  if (view === "late") return renderSpectate(true);
+  // joined
+  if (!me) return;
+  if (st.phase === "lobby") return renderWaiting();
+  const outBefore = me.out && me.outRk !== st.rk;
+  if (st.phase === "answer") return outBefore ? renderSpectate(false) : renderAnswer();
+  if (st.phase === "reveal" || st.phase === "board") {
+    if (me.last && me.last.rk === st.rk) return renderResult();
+    if (outBefore || !me.last || me.last.rk !== st.rk) {
+      if (outBefore) return renderSpectate(false);
+      return setPage(`<div class="pulse" style="font-size:22px">${T("waitResult")}</div>`, "wr" + st.rk);
+    }
+  }
+  if (st.phase === "end") return renderEnd();
+  return renderSpectate(false);
+}
+
+function renderLang() {
+  setPage(`<h1>真的還假的？</h1><div class="sub">True or False? ・ Thật hay Giả?</div>
+    <div class="muted" style="margin-bottom:8px">選擇語言 / Language / Ngôn ngữ</div>
+    <button class="big-btn" data-l="zh">中文</button>
+    <button class="big-btn" data-l="en">English</button>
+    <button class="big-btn" data-l="vi">Tiếng Việt</button>`, "lang");
+  document.querySelectorAll("[data-l]").forEach(b => b.onclick = () => {
+    lang = b.dataset.l; LS.set("lang", lang); document.documentElement.lang = lang;
+    lastRenderKey = ""; if (view === "lang") view = afterLangView || "name"; render();
+  });
+}
+let afterLangView = null;
+$("#langBtn").onclick = () => { afterLangView = view; view = "lang"; lastRenderKey = ""; render(); };
+
+function renderName() {
+  if (!setPage(`<h1>${T("title")}</h1><div class="sub">${T("sub")}</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:10px">${T("enterName")}</div>
+    <input class="name" id="nm" maxlength="20" autocomplete="off" placeholder="${T("namePh")}" value="${esc(LS.get("name") || "")}">
+    <div class="err" id="err"></div>
+    <button class="big-btn" id="go">${T("join")}</button>`, "name" + lang)) return;
+  const go = $("#go"), nm = $("#nm");
+  nm.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
+  go.onclick = async () => {
+    const name = nm.value.trim().replace(/\s+/g, " ");
+    if (!name) { $("#err").textContent = T("nameReq"); return; }
+    if (charLen(name) > 10) { $("#err").textContent = T("nameLong"); return; }
+    go.disabled = true; go.textContent = T("joining"); $("#err").textContent = "";
+    try {
+      // 已經在名單裡（例如重新整理）就直接進入
+      const exist = await api.get(P("players/" + pid));
+      if (exist) { me = exist; view = "joined"; LS.set("name", exist.name); lastRenderKey = ""; render(); return; }
+      const r = await api.put(P("players/" + pid), { name, joinedAt: TS });
+      if (r.ok) { LS.set("name", name); view = "joined"; await fetchMe(); lastRenderKey = ""; render(); return; }
+      const s = await api.get(P("state"));
+      if (s && s.phase !== "lobby") { st = s; view = "late"; lastRenderKey = ""; render(); return; }
+      throw new Error("denied");
+    } catch (e) {
+      $("#err").textContent = T("joinFail"); go.disabled = false; go.textContent = T("join");
+    }
+  };
+}
+
+function renderWaiting() {
+  const modeTxt = st.mode === "elim" ? T("modeElim") : T("modeScore");
+  setPage(`<div style="font-size:70px">🎉</div>
+    <div style="font-size:24px;font-weight:800;margin:6px 0 14px">${T("joined")}</div>
+    <div class="card"><div class="muted">${T("yourName")}</div><div style="font-size:30px;font-weight:900">${esc(me.dn || me.name)}</div></div>
+    <div class="card"><div class="muted">${T("joinedCount")}</div><div class="count">${fmt(st.count || 0)}</div></div>
+    <div class="tag" style="margin-top:12px">${esc(modeTxt)}</div>
+    <div class="pulse muted" style="margin-top:10px">⏳</div>`, "wait" + (me.dn || me.name) + st.count + st.mode + lang);
+}
+
+// ---------- 作答 ----------
+let tickTimer = null;
+function renderAnswer() {
+  const rk = st.rk; const as = answerState[rk] || (LS.get("a_" + rk) ? { a: LS.get("a_" + rk) === "T", status: "sent" } : null);
+  if (as) answerState[rk] = as;
+  const key = "ans" + rk + lang;
+  if (setPage(`<div class="qhead"><span>${T("qn", { n: st.qn })}${st.qTotal ? " / " + st.qTotal : ""}</span><span class="timer" id="tm"></span></div>
+    <div class="q">${esc(qText(st.q))}</div>
+    <div id="rdy" class="ready hide"></div>
+    <div class="ans" id="ansBox">
+      <button class="bT" data-a="T">⭕ ${T("T")}</button>
+      <button class="bF" data-a="F">❌ ${T("F")}</button>
+    </div>
+    <div class="sent" id="sent"></div>`, key)) {
+    document.querySelectorAll("#ansBox button").forEach(b => b.onclick = () => submit(rk, b.dataset.a === "T"));
+  }
+  clearInterval(tickTimer); tickTimer = setInterval(() => updateAnswerUI(rk), 200); updateAnswerUI(rk);
+}
+function updateAnswerUI(rk) {
+  if (!st || st.rk !== rk || st.phase !== "answer" || !$("#ansBox")) { clearInterval(tickTimer); return; }
+  const now = sNow(), as = answerState[rk];
+  const before = now < st.startAt, left = Math.max(0, Math.ceil((st.deadline - now) / 1000));
+  const tm = $("#tm"); tm.textContent = before ? "" : left + "s"; tm.classList.toggle("low", !before && left <= 3 && left > 0);
+  const rdy = $("#rdy"); rdy.classList.toggle("hide", !before);
+  if (before) rdy.textContent = Math.ceil((st.startAt - now) / 1000);
+  const btns = document.querySelectorAll("#ansBox button");
+  const closed = now > st.deadline;
+  btns.forEach(b => {
+    const mine = as && ((b.dataset.a === "T") === as.a);
+    b.disabled = before || !!as || closed;
+    b.classList.toggle("chosen", !!as && mine && as.status !== "late");
+    b.classList.toggle("dim", !!as && !mine);
+  });
+  const s = $("#sent");
+  if (as && as.status === "sending") s.textContent = T("sending");
+  else if (as && as.status === "sent") s.innerHTML = `✅ ${T("sent")}<div class="muted" style="font-size:14px;font-weight:400">${T("noChange")}</div>`;
+  else if (as && as.status === "late") s.textContent = T("tooLate");
+  else if (closed) s.textContent = "⏰ " + T("timeUp");
+  else s.textContent = before ? T("ready") : "";
+}
+async function submit(rk, a) {
+  if (answerState[rk]) return;
+  answerState[rk] = { a, status: "sending" }; updateAnswerUI(rk);
+  if (navigator.vibrate) navigator.vibrate(30);
+  const path = P(`answers/${rk}/${pid}`);
+  while (true) {
+    try {
+      const r = await api.put(path, { a, t: TS });
+      if (r.ok) { answerState[rk].status = "sent"; LS.set("a_" + rk, a ? "T" : "F"); setDot(true); break; }
+      // 被拒：先確認是不是其實已經寫進去了
+      const ex = await api.get(path).catch(() => null);
+      if (ex && typeof ex.a === "boolean") { answerState[rk] = { a: ex.a, status: "sent" }; LS.set("a_" + rk, ex.a ? "T" : "F"); break; }
+      answerState[rk].status = "late"; break;
+    } catch (e) {
+      setDot(false);
+      if (sNow() > st.deadline + 800) { answerState[rk].status = "late"; break; }
+      await sleep(600);
+    }
+  }
+  updateAnswerUI(rk);
+}
+
+// ---------- 結果 ----------
+function renderResult() {
+  const L = me.last, rk = st.rk;
+  const ok = !!L.ok, none = L.a == null;
+  const ansTxt = st.ans ? "⭕ " + T("T") : "❌ " + T("F");
+  let elimLine = "";
+  if (st.mode === "elim") {
+    if (L.void) elimLine = `<div class="banner">${T("voidR")}</div>`;
+    else if (L.outNow) elimLine = `<div class="banner" style="background:#fff">💀 ${T("out")}<div style="font-weight:400;font-size:14px">${T("outSub")}</div></div>`;
+    else if (ok) elimLine = `<div class="banner">🛡️ ${T("survive")} ${T("alive")} ${st.alive || ""}</div>`;
+  }
+  const first = shownResultRk !== rk;
+  const changed = setPage(`
+    <div class="res ${ok ? "ok" : "ng"} ${first ? (ok ? "pop" : "shake") : ""}">
+      <div class="t1">${ok ? "🎉 " + T("correct") : (none ? "⌛ " + T("noAns") : "😵 " + T("wrong"))}</div>
+      ${ok ? `<div class="t2">+${fmt(L.pts)} ${T("pts")}</div>` : ""}
+    </div>
+    ${elimLine}
+    <div class="card"><div class="muted" style="margin-bottom:6px">${T("answerIs")}：<b style="color:#ffd23f">${ansTxt}</b></div><div class="ex">${esc(st.ex ? (st.ex[lang] || st.ex.zh) : "")}</div></div>
+    <div class="stats"><div class="card"><span class="muted">${T("score")}</span><b>${fmt(me.score)}</b></div><div class="card"><span class="muted">${T("rank")}</span><b>${me.rank ? T("rankFmt", { r: me.rank, n: st.count || "" }) : "-"}</b></div></div>
+    ${st.phase === "board" ? `<div class="muted" style="margin-top:10px">📺 ${T("look")}</div>` : ""}`,
+    "res" + rk + lang + st.phase + me.score + me.rank);
+  if (changed && first) { shownResultRk = rk; if (ok) { confetti(90); if (navigator.vibrate) navigator.vibrate([40, 40, 80]); } else if (navigator.vibrate) navigator.vibrate(250); }
+}
+
+function renderSpectate(late) {
+  let body = "";
+  if (st.phase === "lobby") body = `<div class="pulse" style="font-size:22px">${T("waitNext")}</div>`;
+  else if (st.phase === "answer") body = `<div class="qhead"><span>${T("qn", { n: st.qn })}</span><span class="timer" id="tm"></span></div><div class="q">${esc(qText(st.q))}</div><div class="muted">📺 ${T("look")}</div>`;
+  else if (st.phase === "reveal" || st.phase === "board") body = `<div class="q">${esc(qText(st.q))}</div><div class="card"><div style="font-size:30px;font-weight:900;color:#ffd23f">${st.ans ? "⭕ " + T("T") : "❌ " + T("F")}</div><div class="ex" style="margin-top:8px">${esc(st.ex ? (st.ex[lang] || st.ex.zh) : "")}</div></div>`;
+  else if (st.phase === "end") body = `<div style="font-size:60px">🏆</div><div style="font-size:28px;font-weight:900">${T("over")}</div><div class="muted" style="margin-top:8px">📺 ${T("look")}</div>`;
+  const head = late ? `<div class="banner">👀 ${T("late")}</div>` :
+    (me && me.out ? `<div class="banner" style="background:#fff">💀 ${T("out")} ・ ${T("spectate")}</div>` : "");
+  setPage(head + body, "spec" + late + st.phase + st.rk + lang);
+  if (st.phase === "answer") {
+    clearInterval(tickTimer);
+    tickTimer = setInterval(() => { const tm = $("#tm"); if (!tm || st.phase !== "answer") return clearInterval(tickTimer); const n = sNow(); tm.textContent = n < st.startAt ? "" : Math.max(0, Math.ceil((st.deadline - n) / 1000)) + "s"; }, 250);
+  }
+}
+
+function renderEnd() {
+  const r = me.rank, top = r && r <= 3;
+  const changed = setPage(`<div style="font-size:70px">${top ? ["🥇", "🥈", "🥉"][r - 1] : "🎊"}</div>
+    <div style="font-size:30px;font-weight:900">${T("over")}</div>
+    ${top ? `<div class="banner" style="font-size:20px">${T("champ", { r })}</div>` : ""}
+    <div class="stats" style="margin-top:12px"><div class="card"><span class="muted">${T("score")}</span><b>${fmt(me.score)}</b></div><div class="card"><span class="muted">${T("finalRank")}</span><b>${r ? T("rankFmt", { r, n: st.count || "" }) : "-"}</b></div></div>
+    <div class="muted" style="margin-top:14px">${T("thanks")}</div>`, "end" + r + me.score + lang);
+  if (changed && top) confetti(160);
+}
+
+// ---------- 啟動 ----------
+(async () => {
+  try { if ("wakeLock" in navigator) { let wl; const req = async () => { try { wl = await navigator.wakeLock.request("screen"); } catch (e) {} }; req(); document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") req(); }); } } catch (e) {}
+  if (lang) document.documentElement.lang = lang;
+  syncClock(); setInterval(syncClock, 60000);
+  if (view === "boot") {
+    const ex = await api.get(P("players/" + pid)).catch(() => null);
+    if (ex) { me = ex; view = "joined"; } else view = "name";
+  }
+  render();
+  poll();
+})();
+})();
+</script>
+</body>
+</html>
