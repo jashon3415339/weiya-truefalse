@@ -503,7 +503,7 @@ async function doReveal() {
   let nT = 0, nF = 0, nN = 0;
   const res = {};
   for (const p of eligible) {
-    const a = answers[p.id]; const has = a && typeof a.a === "boolean" && a.t <= st.deadline + 800;
+    const a = answers[p.id]; const has = !!(a && typeof a.a === "boolean" && a.t <= st.deadline + 800);   // 沒作答時要是 false，不能是 undefined（Firebase 不收）
     if (has) { a.a ? nT++ : nF++; } else nN++;
     const ok = has && a.a === ans;
     res[p.id] = { a: has ? a.a : null, ok, pts: ok ? calcPoints(true, a.t, st.startAt, st.durMs) : 0 };
@@ -522,7 +522,7 @@ async function doReveal() {
   const aliveAfter = after.filter(p => !p.out).length;
   const upd = {};
   for (const p of after) {
-    upd[P(`players/${p.id}/rank`)] = ranks[p.id];
+    upd[P(`players/${p.id}/rank`)] = ranks[p.id] == null ? null : ranks[p.id];
     const r = res[p.id]; if (!r) continue;
     upd[P(`players/${p.id}/score`)] = p.score;
     if (p.out && p.outRk === rk) { upd[P(`players/${p.id}/out`)] = true; upd[P(`players/${p.id}/outQn`)] = st.qn; upd[P(`players/${p.id}/outRk`)] = rk; }
