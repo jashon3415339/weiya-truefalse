@@ -241,6 +241,7 @@
 <script src="config.js"></script>
 <script src="questions.js"></script>
 <script src="common.js"></script>
+<script src="../weiya-show/festive.js"></script>
 <script>
 (async () => {
 const { C, DEMO, ROOT, host, $, $$, esc, rid, fmt, sleep, calcPoints, loadScript } = TF;
@@ -264,10 +265,12 @@ function show(id) { $$(".sec").forEach(s => s.classList.toggle("on", s.id === id
 const plist = () => Object.entries(players || {}).map(([id, p]) => Object.assign({ id }, p));
 const alivePlayers = () => plist().filter(p => !p.out);
 
-// ---------- 音效（簡單的嗶聲） ----------
+// ---------- 音效：喜慶過年風（鑼鼓、木魚、嗩吶、鞭炮；音效庫在 weiya-show/festive.js） ----------
+// 音效庫讀不到時退回簡單的嗶聲
 let actx = null;
 function beep(f = 880, d = .08, type = "sine", vol = .15) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = f; g.gain.value = vol; g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {} }
-const fanfare = () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .25, "triangle", .2), i * 130));
+const SFX = (name, ...a) => { const F = window.FestiveAudio; if (F) { try { F.sfx[name](...a); return; } catch (e) {} } ({ join: () => beep(1200, .05), drum: () => beep(660, .12, "square", .1), chang: () => beep(1320, .2, "triangle", .15), tick: () => beep(900, .12, "square", .1), gong: () => beep(440, .4, "sawtooth", .12), roll: () => beep(300, 1.8, "triangle", .08), fanfare: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .25, "triangle", .2), i * 130)) }[name] || (() => {}))(); };
+const fanfare = () => SFX("fanfare");
 
 // ---------- QR Code ----------
 const joinURL = new URL("./", location.href).href;
@@ -340,7 +343,7 @@ function renderLobby() {
   $$(".chip", box).forEach(c => { if (!ids.has(c.dataset.id)) c.remove(); });
   for (const p of list) {
     let c = box.querySelector(`[data-id="${p.id}"]`);
-    if (!c) { c = document.createElement("span"); c.className = "chip"; c.dataset.id = p.id; box.prepend(c); if (seenNames.size && !seenNames.has(p.id)) beep(1200, .05); seenNames.add(p.id); }
+    if (!c) { c = document.createElement("span"); c.className = "chip"; c.dataset.id = p.id; box.prepend(c); if (seenNames.size && !seenNames.has(p.id)) SFX("join"); seenNames.add(p.id); }
     c.textContent = p.dn || p.name;
   }
   // 最新加入的 3 位：大卡片跳出來
@@ -401,8 +404,8 @@ function loop() {
   // 倒數期間只顯示大數字，題目藏起來；倒數到 0 才出現
   $("#cd").classList.toggle("hide", !before);
   $("#qWrap").style.visibility = before ? "hidden" : "visible";
-  if (before) { const c = String(Math.ceil((st.startAt - n) / 1000)); const el = $("#cdN"); if (el.textContent !== c) { el.textContent = c; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); beep(660, .12, "square", .1); } }
-  else if (qShownRk !== st.rk) { qShownRk = st.rk; const w = $("#qWrap"); w.classList.remove("q-in"); void w.offsetWidth; w.classList.add("q-in"); beep(1320, .2, "triangle", .15); }
+  if (before) { const c = String(Math.ceil((st.startAt - n) / 1000)); const el = $("#cdN"); if (el.textContent !== c) { el.textContent = c; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); SFX("drum"); } }
+  else if (qShownRk !== st.rk) { qShownRk = st.rk; const w = $("#qWrap"); w.classList.remove("q-in"); void w.offsetWidth; w.classList.add("q-in"); SFX("chang"); }
   const tn = $("#tNum");
   const tHtml = before ? `` : `${String(left > 0 ? sec : 0).padStart(2, "0")}<small>秒 · SECONDS · GIÂY</small>`;
   if (tn.innerHTML !== tHtml) tn.innerHTML = tHtml;
@@ -410,8 +413,8 @@ function loop() {
   const tot = st.alive || 0, cnt = Object.keys(answersNow).length;
   const aHtml = `已作答 Answered <b>${cnt}</b> / ${tot}${left <= 0 && !before ? `<span class="tu">⏰ 時間到！</span>` : ""}`;
   if ($("#answered").innerHTML !== aHtml) $("#answered").innerHTML = aHtml;
-  if (!before && left > 0 && sec <= 3 && sec !== lastTick) { lastTick = sec; beep(sec === 1 ? 1100 : 900, .12, "square", .1); }
-  if (left <= 0 && lastTick !== 0) { lastTick = 0; beep(440, .4, "sawtooth", .12); updateButtons(); }
+  if (!before && left > 0 && sec <= 3 && sec !== lastTick) { lastTick = sec; SFX("tick"); }
+  if (left <= 0 && lastTick !== 0) { lastTick = 0; SFX("gong"); updateButtons(); }
 }
 requestAnimationFrame(loop);
 
@@ -524,7 +527,7 @@ async function doReveal() {
   setupReveal(st.q, stats);
   await sleep(150);
   animateBars(stats);
-  beep(300, 1.8, "triangle", .08);
+  SFX("roll", 1.8);
   await sleep(3400);
   await host.update(upd);
   showAnswer(ans, q.ex, stats, elim ? { killed: wrong.length, alive: aliveAfter, isVoid } : null);
@@ -644,7 +647,7 @@ function renderBoard() {
       }, 500 + i * 60);
     }
   });
-  if (animate) setTimeout(() => beep(660, .15, "triangle", .12), 500);
+  if (animate) setTimeout(() => SFX("chang"), 500);
 }
 
 // ---------- 頒獎台 ----------
@@ -662,7 +665,7 @@ function renderPodium() {
     c.querySelector("small").textContent = `${fmt(p.score)} 分${ranks[p.id] !== i + 1 ? `（並列第 ${ranks[p.id]}）` : ""}`;
   });
   // 第三名 → 第二名 → 冠軍
-  [3, 2, 1].forEach((n, i) => setTimeout(() => { const c = $("#pc" + n); if (c.querySelector(".pn").textContent) { c.classList.add("on"); beep(700 - n * 60, .3, "triangle", .2); } }, 600 + i * 1100));
+  [3, 2, 1].forEach((n, i) => setTimeout(() => { const c = $("#pc" + n); if (c.querySelector(".pn").textContent) { c.classList.add("on"); SFX(n === 1 ? "fanfare" : "drum"); } }, 600 + i * 1100));
   setTimeout(() => {
     if (top[0]) { $("#winName").textContent = top[0].dn || top[0].name; $("#winScore").textContent = `最終分數 ${fmt(top[0].score)} 分`; }
     award.classList.add("champ"); fanfare(); fireworks();
