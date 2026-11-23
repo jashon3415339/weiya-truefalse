@@ -10,6 +10,16 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC","Noto Sans TC",Arial,sans-serif;color:#fff;background:#0e1733}
   body{background:radial-gradient(circle at 85% 8%,#4566ce 0%,transparent 28%),linear-gradient(125deg,#0d1735,#192c5d 60%,#172142)}
+  /* 背景：緩慢漂浮的 ⭕ ❌ 幾何圖形＋柔和光影（電視益智節目感，不搶題目） */
+  .bgfx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+  .bgfx .lt{position:absolute;width:70vmax;height:70vmax;border-radius:50%;filter:blur(8vmax);opacity:.35;animation:lt 18s ease-in-out infinite alternate}
+  .bgfx .lt.a{left:-20vmax;top:-25vmax;background:#3d63d6}.bgfx .lt.b{right:-25vmax;bottom:-30vmax;background:#1d8f6a;animation-delay:-9s}.bgfx .lt.c{left:35vw;top:40vh;width:40vmax;height:40vmax;background:#b83a55;opacity:.18;animation-delay:-4s}
+  @keyframes lt{to{transform:translate(6vw,4vh) scale(1.1)}}
+  .bgfx i{position:absolute;font-style:normal;font-weight:900;line-height:1;opacity:.06;animation:sh 22s ease-in-out infinite alternate}
+  .bgfx i.o{color:#4ade80;border:1.4vh solid #4ade80;border-radius:50%;opacity:.07}
+  .bgfx i.x{color:#f87171}
+  @keyframes sh{to{transform:translate(5vw,-6vh) rotate(40deg)}}
+  .bgfx .grid{position:absolute;inset:0;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:6vh 6vh;-webkit-mask:radial-gradient(circle at 50% 50%,#000,transparent 75%);mask:radial-gradient(circle at 50% 50%,#000,transparent 75%)}
   .stage{position:fixed;inset:0;padding:5vh 4.5vw 12vh}
   .sec{display:none;width:100%;height:100%;position:relative}
   .sec.on{display:block}
@@ -130,6 +140,7 @@
 </style>
 </head>
 <body>
+<div class="bgfx"><div class="grid"></div><div class="lt a"></div><div class="lt b"></div><div class="lt c"></div><i class="o" style="left:0%;top:0%;width:8vh;height:8vh;animation-delay:-0s"></i><i class="x" style="left:41%;top:67%;font-size:13vh;animation-delay:-2s">✕</i><i class="o" style="left:82%;top:34%;width:18vh;height:18vh;animation-delay:-4s"></i><i class="x" style="left:23%;top:1%;font-size:11vh;animation-delay:-6s">✕</i><i class="o" style="left:64%;top:68%;width:16vh;height:16vh;animation-delay:-8s"></i><i class="x" style="left:5%;top:35%;font-size:9vh;animation-delay:-10s">✕</i><i class="o" style="left:46%;top:2%;width:14vh;height:14vh;animation-delay:-12s"></i><i class="x" style="left:87%;top:69%;font-size:19vh;animation-delay:-14s">✕</i><i class="o" style="left:28%;top:36%;width:12vh;height:12vh;animation-delay:-16s"></i><i class="x" style="left:69%;top:3%;font-size:17vh;animation-delay:-18s">✕</i><i class="o" style="left:10%;top:70%;width:10vh;height:10vh;animation-delay:-20s"></i><i class="x" style="left:51%;top:37%;font-size:15vh;animation-delay:-22s">✕</i></div>
 <div class="stage">
   <!-- 開場 -->
   <section class="sec" id="lobby">
@@ -271,6 +282,8 @@ let actx = null;
 function beep(f = 880, d = .08, type = "sine", vol = .15) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = f; g.gain.value = vol; g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d); o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {} }
 const SFX = (name, ...a) => { const F = window.FestiveAudio; if (F) { try { F.sfx[name](...a); return; } catch (e) {} } ({ join: () => beep(1200, .05), drum: () => beep(660, .12, "square", .1), chang: () => beep(1320, .2, "triangle", .15), tick: () => beep(900, .12, "square", .1), gong: () => beep(440, .4, "sawtooth", .12), roll: () => beep(300, 1.8, "triangle", .08), fanfare: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .25, "triangle", .2), i * 130)) }[name] || (() => {}))(); };
 const fanfare = () => SFX("fanfare");
+// 嵌在主持大螢幕裡時，把遊戲進度告訴大螢幕（大螢幕依此調整《Way Back Then》的段落和音量）；回傳 true 表示大螢幕有接手
+const hook = (evt) => { try { if (window.parent !== window && typeof window.parent.WeiyaHook === "function") { window.parent.WeiyaHook("truefalse", evt); return true; } } catch (e) {} return false; };
 
 // ---------- QR Code ----------
 const joinURL = new URL("./", location.href).href;
@@ -404,8 +417,8 @@ function loop() {
   // 倒數期間只顯示大數字，題目藏起來；倒數到 0 才出現
   $("#cd").classList.toggle("hide", !before);
   $("#qWrap").style.visibility = before ? "hidden" : "visible";
-  if (before) { const c = String(Math.ceil((st.startAt - n) / 1000)); const el = $("#cdN"); if (el.textContent !== c) { el.textContent = c; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); SFX("drum"); } }
-  else if (qShownRk !== st.rk) { qShownRk = st.rk; const w = $("#qWrap"); w.classList.remove("q-in"); void w.offsetWidth; w.classList.add("q-in"); SFX("chang"); }
+  if (before) { const c = String(Math.ceil((st.startAt - n) / 1000)); const el = $("#cdN"); if (el.textContent !== c) { el.textContent = c; el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); SFX("drum"); hook("ready"); } }
+  else if (qShownRk !== st.rk) { qShownRk = st.rk; const w = $("#qWrap"); w.classList.remove("q-in"); void w.offsetWidth; w.classList.add("q-in"); SFX("chang"); hook("question"); }
   const tn = $("#tNum");
   const tHtml = before ? `` : `${String(left > 0 ? sec : 0).padStart(2, "0")}<small>秒 · SECONDS · GIÂY</small>`;
   if (tn.innerHTML !== tHtml) tn.innerHTML = tHtml;
@@ -413,8 +426,8 @@ function loop() {
   const tot = st.alive || 0, cnt = Object.keys(answersNow).length;
   const aHtml = `已作答 Answered <b>${cnt}</b> / ${tot}${left <= 0 && !before ? `<span class="tu">⏰ 時間到！</span>` : ""}`;
   if ($("#answered").innerHTML !== aHtml) $("#answered").innerHTML = aHtml;
-  if (!before && left > 0 && sec <= 3 && sec !== lastTick) { lastTick = sec; SFX("tick"); }
-  if (left <= 0 && lastTick !== 0) { lastTick = 0; SFX("gong"); updateButtons(); }
+  if (!before && left > 0 && sec <= 3 && sec !== lastTick) { lastTick = sec; SFX("tick"); if (sec === 3) hook("last3"); }
+  if (left <= 0 && lastTick !== 0) { lastTick = 0; SFX("gong"); hook("timeup"); updateButtons(); }
 }
 requestAnimationFrame(loop);
 
@@ -527,11 +540,11 @@ async function doReveal() {
   setupReveal(st.q, stats);
   await sleep(150);
   animateBars(stats);
-  SFX("roll", 1.8);
+  hook("reveal"); SFX("roll", 1.8);
   await sleep(3400);
   await host.update(upd);
   showAnswer(ans, q.ex, stats, elim ? { killed: wrong.length, alive: aliveAfter, isVoid } : null);
-  fanfare();
+  if (!hook("revealHit")) fanfare();
 }
 
 function setupReveal(qo, stats) {
@@ -647,7 +660,7 @@ function renderBoard() {
       }, 500 + i * 60);
     }
   });
-  if (animate) setTimeout(() => SFX("chang"), 500);
+  if (animate) { setTimeout(() => SFX("chang"), 500); hook("board"); }
 }
 
 // ---------- 頒獎台 ----------
@@ -665,6 +678,7 @@ function renderPodium() {
     c.querySelector("small").textContent = `${fmt(p.score)} 分${ranks[p.id] !== i + 1 ? `（並列第 ${ranks[p.id]}）` : ""}`;
   });
   // 第三名 → 第二名 → 冠軍
+  hook("podium");
   [3, 2, 1].forEach((n, i) => setTimeout(() => { const c = $("#pc" + n); if (c.querySelector(".pn").textContent) { c.classList.add("on"); SFX(n === 1 ? "fanfare" : "drum"); } }, 600 + i * 1100));
   setTimeout(() => {
     if (top[0]) { $("#winName").textContent = top[0].dn || top[0].name; $("#winScore").textContent = `最終分數 ${fmt(top[0].score)} 分`; }
